@@ -2,10 +2,15 @@
 
     <div class="ui container">
         <div class="ui grid">
-            <div class="four wide column">
+            <div class="large screen only four wide column">
                 <img style="width:100%; object-fit: cover;"src="<%= data.img %>" alt="cover">
             </div>
-            <div class="twelve wide column">
+            <div class="large screen only twelve wide column">
+                <h1><%= data.title %></h1>
+                <p><%= data.status %></p>
+                <p style="white-space: pre-line;"><%= data.desc %></p>
+            </div>
+            <div class="mobile only sixteen wide column">
                 <h1><%= data.title %></h1>
                 <p><%= data.status %></p>
                 <p style="white-space: pre-line;"><%= data.desc %></p>

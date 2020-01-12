@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 8080;
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
+app.use(express.static('public'));
 
 app.get('/', async (req, res) => {
 	let data = await getHome();
@@ -71,7 +72,6 @@ async function getHome() {
 }
 
 async function getDetail(url) {
-	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log(err));
 	let obj = {
 		video: '',
 		title: '',
@@ -79,9 +79,12 @@ async function getDetail(url) {
 		next: '',
 		all: ''
 	};
+	if (!url.includes('-')) return obj;
+	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log('err'));
+
 	if (res) {
 		let $ = cheerio.load(res.data);
-		obj['video'] = 'https://www.animebam.se' + $('#subbed-Animegg iframe').attr('src');
+		obj['video'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
 		$('.nap a').each(function(index) {
 			if ($(this).attr('href') !== undefined && $(this).attr('href').includes('series')) {

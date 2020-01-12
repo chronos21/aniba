@@ -4,6 +4,7 @@ const axios = require('axios');
 const moment = require('moment');
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
@@ -125,4 +126,4 @@ async function getSeries(url) {
 
 // getSearch('days');
 
-app.listen(8080, () => console.log('Enjin Stato'));
+app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

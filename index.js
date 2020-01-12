@@ -81,7 +81,7 @@ async function getDetail(url) {
 	};
 	if (res) {
 		let $ = cheerio.load(res.data);
-		obj['video'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
+		obj['video'] = 'https://www.animebam.se' + $('#subbed-Animegg iframe').attr('src');
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
 		$('.nap a').each(function(index) {
 			if ($(this).attr('href') !== undefined && $(this).attr('href').includes('series')) {

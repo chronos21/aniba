@@ -1,19 +1,16 @@
 <%- include('./header') %>
 
-    <div class="ui container">
-        <div>
-            <a href="<%= data.all %>">All Episodes</a>
-            <span> | </span>
-            <a href="<%= data.prev %>">Previous</a>
-            <span> | </span>
-            <a href="<%= data.next %>">Next</a>
-        </div>
-        <h1 class="mb-4"><%= data.title %></h1>
-        
-        <div style="height: 50vw; margin-bottom: 30px;">
-            <iframe src="<%= data.video %>" allowfullscreen frameborder="0" width="100%" height="100%"></iframe>
-        </div>
+<div class="ui container">
+    <div>
+        <a href="<%= data.all %>">All Episodes</a>
+        <span> | </span>
+        <a href="<%= data.prev %>">Previous</a>
+        <span> | </span>
+        <a href="<%= data.next %>">Next</a>
     </div>
+    <h1 class="mb-4"><%= data.title %></h1>
+    <div style="width: 100%; height: 100%; background-color: black; margin-bottom: 30px;">
+        <video src="/video?url=<%= data.video %>&embed=<%= data.embed %>" width="100%" height="100%" controls></video>
+    </div>
+</div>
 <%- include('./footer') %>
-
-

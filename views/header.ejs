@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -7,15 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
     <title><%= title %></title>
 </head>
+
 <body>
     <div class="ui container small secondary menu" style="padding-top: 10px;">
         <a class="item <%= tab === 'home' && 'active'%>" href="/">
-          Home
+            Home
         </a>
         <!-- <a class="item">
           Browse
         </a> -->
-        <div class="right menu">  
+        <div class="right menu">
             <div class="item">
                 <form action="/search/" method="GET" class="ui icon input">
                     <input type="text" name="q" placeholder="Search...">

@@ -1,17 +1,16 @@
 <%- include('./header') %>
-    <div class="ui container">
-        <div class="ui relaxed selection list" style="margin-bottom: 30px;">
+<div class="ui container">
+    <div class="ui relaxed selection list" style="margin-bottom: 30px;">
         <% data.forEach(function(item){ %>
-            <div class="item">
-                <div class="content">
-                    <a class="header" href="/<%= item.Episode.uri %>">
-                        <%= item.Show.title %> - Episode <%= item.Episode.number %>
-                    </a>
-                    <div class="description"><%= moment(item.createdAt).fromNow() %>.</div>
-                </div>
+        <div class="item">
+            <div class="content">
+                <a class="header" href="/<%= item.Episode.uri %>">
+                    <%= item.Show.title %> - Episode <%= item.Episode.number %>
+                </a>
+                <div class="description"><%= moment(item.createdAt).fromNow() %>.</div>
             </div>
-        <% }); %>
         </div>
+        <% }); %>
     </div>
+</div>
 <%- include('./footer') %>
-

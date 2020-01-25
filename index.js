@@ -2,6 +2,7 @@ const express = require('express');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const moment = require('moment');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -12,6 +13,7 @@ app.use(express.static('public'));
 
 app.get('/', async (req, res) => {
 	let data = await getHome();
+	// await getVideo();
 	res.render('home', { data, tab: 'home', title: 'aniba' });
 });
 
@@ -19,6 +21,25 @@ app.get('/search', async (req, res) => {
 	let { q } = req.query;
 	let data = await getSearch(q);
 	res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
+});
+
+app.get('/video', async (req, res) => {
+	let { url, embed } = req.query;
+	// console.log(video);
+	let { data, headers } = await axios({
+		url: url,
+		headers: {
+			Referer: embed
+		},
+		responseType: 'stream'
+	});
+	const head = {
+		'Content-Length': headers['content-length'],
+		'Content-Type': 'video/mp4'
+	};
+	res.writeHead(200, head);
+	data.pipe(res);
+	// res.data.on('data', (chunk) => console.log(res.headers['content-length']));
 });
 
 app.get('/:id', async (req, res) => {
@@ -77,14 +98,16 @@ async function getDetail(url) {
 		title: '',
 		prev: '',
 		next: '',
-		all: ''
+		all: '',
+		embed: ''
 	};
 	if (!url.includes('-')) return obj;
 	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log('err'));
 
 	if (res) {
 		let $ = cheerio.load(res.data);
-		obj['video'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
+		obj['embed'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
+		obj['video'] = await getVideo(obj['embed']);
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
 		$('.nap a').each(function(index) {
 			if ($(this).attr('href') !== undefined && $(this).attr('href').includes('series')) {
@@ -98,6 +121,17 @@ async function getDetail(url) {
 		if (obj['next'] === undefined) obj['next'] = '#';
 	}
 	return obj;
+}
+
+async function getVideo(url) {
+	let { data } = await axios.get(url);
+	let videoLink = '';
+	if (data) {
+		let $ = cheerio.load(data);
+		videoLink = 'https://www.animegg.org' + $('[property="og:video"]').attr('content');
+	}
+
+	return videoLink;
 }
 
 async function getSeries(url) {

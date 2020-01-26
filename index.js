@@ -5,7 +5,8 @@ const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
 const axios = require('axios');
 let key = 'abcdefghijklmnopqrstuvwxyz';
-let index = 0;
+let pointer1 = 0;
+let pointer2 = 0;
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,11 +27,17 @@ app.use(express.static('public'));
 app.use(express.json());
 
 async function doCrawl() {
-	await crawler.saveSeries(key[index]);
-	if (key[index] === 'z') {
+	let q = key[pointer1] + key[pointer2];
+	await crawler.saveSeries(q);
+	if (q == 'zz') {
 		return;
 	} else {
-		index++;
+		if (pointer2 === key.length - 1) {
+			pointer1 += 1;
+			pointer2 = 0;
+		} else {
+			pointer2 += 1;
+		}
 		return doCrawl();
 	}
 }

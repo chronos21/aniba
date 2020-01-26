@@ -51,8 +51,8 @@ app.get('/test/all', async (req, res) => {
 		search = { title: new RegExp(q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi') };
 	}
 	// console.log(search);
-	if (!limit) limit = 99;
-	if (!skip) skip = 0;
+	if (!limit || Number(limit) == NaN) limit = 99;
+	if (!skip || Number(skip) == NaN) skip = 0;
 	let series = await Series.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
 	return res.status(200).json({ series });
 });

@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
 const axios = require('axios');
+let key = 'abcdefghijklmnopqrstuvwxyz';
+let index = 0;
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -13,12 +15,25 @@ mongoose
 		useNewUrlParser: true,
 		useUnifiedTopology: true
 	})
-	.then(() => console.log('Mongo status green'));
+	.then(() => {
+		console.log('Mongo status green');
+		doCrawl();
+	});
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.json());
+
+async function doCrawl() {
+	await crawler.saveSeries(key[index]);
+	if (key[index] === 'z') {
+		return;
+	} else {
+		index++;
+		return doCrawl();
+	}
+}
 
 app.post('/api/comments/:parentId', async (req, res) => {
 	let { text, authorId } = req.body;
@@ -43,6 +58,7 @@ app.get('/search', async (req, res) => {
 	let { q } = req.query;
 	let data = await crawler.getSearch(q);
 	res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
+	crawler.saveSeries(data);
 });
 
 app.get('/video', async (req, res) => {

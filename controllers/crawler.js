@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
+const Series = require('../models/series');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -10,6 +11,7 @@ async function getSearch(q) {
 			let href = $(this).attr('href');
 			let title = $(this).find('h2').text();
 			let episodes = '';
+			let altTitles = '';
 			let status = '';
 			let img = $(this).find('img').attr('src');
 			$(this).find('.media-body .first div').each(function(index) {
@@ -18,9 +20,11 @@ async function getSearch(q) {
 					episodes = text;
 				} else if (text.includes('Status')) {
 					status = text;
+				} else if (text.includes('Alt')) {
+					altTitles = text;
 				}
 			});
-			arr.push({ title, episodes, status, href, img });
+			arr.push({ title, episodes, status, href, img, altTitles });
 		});
 	}
 	return arr;
@@ -104,7 +108,27 @@ async function getSeries(url) {
 	return obj;
 }
 
+async function saveSeries(arr) {
+	if (typeof arr === 'string') arr = await getSearch(arr);
+	if (arr.length > 0) {
+		let series = await Series.find().catch((err) => console.log(err));
+		let length = series.length;
+		series = series.map((item) => item.title);
+		// console.log(series);
+		for (let el of arr) {
+			if (!series.includes(el.title)) {
+				let newSeries = await Series.create({ ...el });
+				console.log(newSeries);
+			}
+		}
+		let newLength = await Series.find().catch((err) => console.log(err));
+		newLength = newLength.length;
+		console.log(length, newLength);
+	}
+}
+
 exports.getHome = getHome;
 exports.getDetail = getDetail;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
+exports.saveSeries = saveSeries;

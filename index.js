@@ -2,14 +2,52 @@ const express = require('express');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const moment = require('moment');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+mongoose
+	.connect('mongodb://cahya:isra12@ds213529.mlab.com:13529/aniba', {
+		useNewUrlParser: true,
+		useUnifiedTopology: true
+	})
+	.then(() => console.log('Mongo status green'));
+
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(express.json());
+
+const commentSchema = new mongoose.Schema({
+	parentId: String,
+	text: String,
+	authorId: String,
+	createdAt: {
+		type: Date,
+		default: Date.now
+	}
+});
+
+commentSchema.virtual('date_formatted').get(function() {
+	return moment(this.createdAt).fromNow();
+});
+
+const Comment = mongoose.model('Comment', commentSchema);
+
+app.post('/api/comments/:parentId', async (req, res) => {
+	let { text, authorId } = req.body;
+	let { parentId } = req.params;
+	if (!text || !parentId || !authorId) return res.status(400);
+	let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
+	return res.json({ comment: newComment });
+});
+
+app.get('/api/comments/:parentId', async (req, res) => {
+	let { parentId } = req.params;
+	let comments = await Comment.find({ parentId });
+	return res.json({ comments });
+});
 
 app.get('/', async (req, res) => {
 	let data = await getHome();
@@ -32,6 +70,9 @@ app.get('/video', async (req, res) => {
 			Referer: embed
 		},
 		responseType: 'stream'
+	}).catch((err) => {
+		console.log(err);
+		return res.status(404);
 	});
 	const head = {
 		'Content-Length': headers['content-length'],
@@ -45,7 +86,7 @@ app.get('/video', async (req, res) => {
 app.get('/:id', async (req, res) => {
 	let url = req.params.id;
 	let data = await getDetail(url);
-	res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free` });
+	res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
 });
 
 app.get('/series/:id', async (req, res) => {

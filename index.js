@@ -3,6 +3,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
+const Series = require('./models/series');
 const axios = require('axios');
 // let key = 'abcdefghijklmnopqrstuvwxyz';
 // let pointer1 = 0;
@@ -41,6 +42,20 @@ app.use(express.json());
 // 		return doCrawl();
 // 	}
 // }
+
+app.get('/test/all', async (req, res) => {
+	let sort = { createdAt: -1 };
+	let { skip, limit, q } = req.query;
+	let search = null;
+	if (q) {
+		search = { title: new RegExp(q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi') };
+	}
+	// console.log(search);
+	if (!limit) limit = 99;
+	if (!skip) skip = 0;
+	let series = await Series.find(search).limit(limit).skip(skip).sort(sort);
+	return res.status(200).json({ series });
+});
 
 app.post('/api/comments/:parentId', async (req, res) => {
 	let { text, authorId } = req.body;
@@ -97,7 +112,18 @@ app.get('/:id', async (req, res) => {
 
 app.get('/series/:id', async (req, res) => {
 	let id = req.params.id;
-	let data = await getSeries(id);
+	let data = await Series.findOne({ href: '/series/' + id });
+	// console.log(data);
+	if (data == null || !Array.isArray(data.episodes)) {
+		data = await crawler.getSeries(id);
+		crawler.saveEpisodes(data);
+	} else {
+		setTimeout(async () => {
+			let newData = await crawler.getSeries(id);
+			crawler.saveEpisodes(newData);
+		}, 4000);
+		// console.log(data);
+	}
 	res.render('series', {
 		data,
 		tab: 'home',

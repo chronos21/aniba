@@ -5,7 +5,7 @@ const seriesSchema = new mongoose.Schema({
 	altTitles: String,
 	img: String,
 	desc: String,
-	episodes: String,
+	episodes: mongoose.Schema.Types.Mixed,
 	status: String,
 	href: String
 });

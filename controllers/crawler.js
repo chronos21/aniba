@@ -81,13 +81,15 @@ async function getVideo(url) {
 	return videoLink;
 }
 
-async function getSeries(url) {
+async function getSeries(url, doCrawl = false) {
 	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => console.log(err));
 	let obj = {
 		title: '',
 		status: '',
 		desc: '',
+		href: '',
 		img: '',
+		altTitles: '',
 		episodes: []
 	};
 	if (res) {
@@ -100,10 +102,12 @@ async function getSeries(url) {
 			episodes.push({ title, href, subtitle });
 		});
 		obj['title'] = $('.media-body h1').text();
+		obj['altTitles'] = 'Alt' + $('.media-body .infoami').text().split('Alternate')[1];
 		obj['img'] = $('.media img').attr('src');
 		obj['status'] = $('.media-body .infoami').text().split('Alternate')[0].replace('Status:', ' | Status:');
 		obj['desc'] = $('.ptext').text();
 		obj['episodes'] = episodes;
+		obj['href'] = '/series/' + url;
 	}
 	return obj;
 }
@@ -127,8 +131,32 @@ async function saveSeries(arr) {
 	}
 }
 
+async function saveEpisodes(obj) {
+	let { title, episodes, desc } = obj;
+	let series = await Series.findOne({ title: title });
+	if (series !== null) {
+		let modified = false;
+		if (series.episodes[0].subtitle !== episodes[0].subtitle) {
+			series.episodes = episodes;
+			series.markModified('episodes');
+			await series.save();
+			modified = true;
+		}
+		if (series.desc !== desc) {
+			series.desc = desc;
+			await series.save();
+			modified = true;
+		}
+		console.log('Modified: ' + modified.toString());
+	} else {
+		await Series.create({ ...obj });
+		console.log('Created ' + title);
+	}
+}
+
 exports.getHome = getHome;
 exports.getDetail = getDetail;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
 exports.saveSeries = saveSeries;
+exports.saveEpisodes = saveEpisodes;

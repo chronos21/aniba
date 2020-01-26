@@ -25,6 +25,8 @@ mongoose
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(express.static('views'));
+
 app.use(express.json());
 
 // async function doCrawl() {

@@ -45,7 +45,6 @@
 
         axios.get('/api/comments/' + parentId)
             .then(res => {
-                console.log(res)
                 let commentList = document.querySelector('#comment-list')
                 let { comments } = res.data
                 commentList.innerHTML = ''

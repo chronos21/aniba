@@ -143,7 +143,7 @@ async function getDetail(url) {
 		embed: ''
 	};
 	if (!url.includes('-')) return obj;
-	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log('err'));
+	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log(err));
 
 	if (res) {
 		let $ = cheerio.load(res.data);

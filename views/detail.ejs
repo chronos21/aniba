@@ -8,20 +8,21 @@
         <span> | </span>
         <a href="<%= data.next %>">Next</a>
     </div>
-    <h1 class="mb-4"><%= data.title %></h1>
+    <h3 class="ui header mb-4"><%= data.title %></h3>
     <div style="width: 100%; height: 100%; background-color: black; margin-bottom: 30px;">
         <video src="/video?url=<%= data.video %>&embed=<%= data.embed %>" width="100%" height="100%" controls></video>
     </div>
 
     <div style="margin-bottom: 30px;">
         <h3 class="ui dividing header">Comments</h3>
+        <p id="no-comment">There's no comment</p>
         <div id="comment-list" class="ui comments">
 
         </div>
 
         <form class="ui reply form" id="comment-form" onsubmit="postComment(event)">
             <div class="field">
-                <textarea id="comment-box"></textarea>
+                <textarea id="comment-box" rows="5"></textarea>
             </div>
             <button class="ui blue labeled submit icon button">
                 <i class="icon edit"></i> Add Reply
@@ -48,6 +49,7 @@
                 let commentList = document.querySelector('#comment-list')
                 let { comments } = res.data
                 commentList.innerHTML = ''
+                if (comments.length > 0) document.querySelector('#no-comment').style.display = "none"
                 for (let comment of comments) {
                     let item = makeComment(comment.authorId, comment.text, comment.createdAt)
                     commentList.innerHTML += item
@@ -82,6 +84,7 @@
                 let item = makeComment(comment.authorId, comment.text, comment.createdAt)
                 document.querySelector('#comment-box').value = ''
                 commentList.innerHTML += item
+                document.querySelector('#no-comment').style.display = "none"
             })
     }
 </script>

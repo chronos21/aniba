@@ -53,7 +53,7 @@ app.get('/test/all', async (req, res) => {
 	// console.log(search);
 	if (!limit) limit = 99;
 	if (!skip) skip = 0;
-	let series = await Series.find(search).limit(limit).skip(skip).sort(sort);
+	let series = await Series.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
 	return res.status(200).json({ series });
 });
 

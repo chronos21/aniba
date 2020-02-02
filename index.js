@@ -20,7 +20,7 @@ mongoose
 	.then(() => {
 		console.log('Mongo status green');
 		// doCrawl();
-	});
+	}).catch(err => console.log(err));
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
@@ -53,8 +53,8 @@ app.get('/test/all', async (req, res) => {
 		search = { title: new RegExp(q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi') };
 	}
 	// console.log(search);
-	if (!limit || Number(limit) === NaN) limit = 99;
-	if (!skip || Number(skip) === NaN) skip = 0;
+	if (!limit || isNaN(Number(limit))) limit = 99;
+	if (!skip || isNaN(Number(skip))) skip = 0;
 	let series = await Series.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
 	return res.status(200).json({ series });
 });
@@ -74,15 +74,24 @@ app.get('/api/comments/:parentId', async (req, res) => {
 });
 
 app.get('/', async (req, res) => {
-	let data = await crawler.getHome();
-	res.render('home', { data, tab: 'home', title: 'aniba' });
+	try{
+		let data = await crawler.getHome();
+		res.render('home', { data, tab: 'home', title: 'aniba' });
+	} catch(err){
+		console.log(err)
+	}
 });
 
 app.get('/search', async (req, res) => {
-	let { q } = req.query;
-	let data = await crawler.getSearch(q);
-	res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
-	crawler.saveSeries(data);
+	try{
+		let { q } = req.query;
+		let data = await crawler.getSearch(q);
+		res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
+		crawler.saveSeries(data);
+	} catch(err){
+		console.log(err)
+	}
+
 });
 
 app.get('/video', async (req, res) => {
@@ -97,40 +106,72 @@ app.get('/video', async (req, res) => {
 		console.log(err);
 		return res.status(404);
 	});
-	const head = {
-		'Content-Length': headers['content-length'],
-		'Content-Type': 'video/mp4'
-	};
-	res.writeHead(200, head);
-	data.pipe(res);
-	// res.data.on('data', (chunk) => console.log(res.headers['content-length']));
+
+	const fileSize = headers['content-length']
+	const range = headers.range
+
+	if (range) {
+		const parts = range.replace(/bytes=/, "").split("-")
+		const start = parseInt(parts[0], 10)
+		const end = parts[1]
+		  ? parseInt(parts[1], 10)
+		  : fileSize-1
+		const chunksize = (end-start)+1
+		const head = {
+		  'Content-Range': `bytes=${start}-${end}/${fileSize}`,
+		  'Accept-Ranges': 'bytes',
+		  'Content-Length': chunksize,
+		  'Content-Type': 'video/mp4',
+		}
+		res.writeHead(206, head);
+		data.pipe(res);
+	} else {
+		console.log(headers)
+		const head = {
+			'Content-Length': headers['content-length'],
+			'Content-Type': 'video/mp4'
+		};
+		res.writeHead(200, head);
+		data.pipe(res);
+	}
 });
 
 app.get('/:id', async (req, res) => {
-	let url = req.params.id;
-	let data = await crawler.getDetail(url);
-	res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
+	try{
+		let url = req.params.id;
+		let data = await crawler.getDetail(url);
+		res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
+	} catch(err){
+		console.log(err)
+	}
+
 });
 
 app.get('/series/:id', async (req, res) => {
-	let id = req.params.id;
-	let data = await Series.findOne({ href: '/series/' + id });
-	// console.log(data);
-	if (data == null || !Array.isArray(data.episodes)) {
-		data = await crawler.getSeries(id);
-		crawler.saveEpisodes(data);
-	} else {
-		setTimeout(async () => {
-			let newData = await crawler.getSeries(id);
-			crawler.saveEpisodes(newData);
-		}, 4000);
+	try{
+		let id = req.params.id;
+		let data = await Series.findOne({ href: '/series/' + id });
 		// console.log(data);
+		if (data == null || !Array.isArray(data.episodes)) {
+			data = await crawler.getSeries(id);
+			crawler.saveEpisodes(data);
+		} else {
+			setTimeout(async () => {
+				let newData = await crawler.getSeries(id);
+				crawler.saveEpisodes(newData);
+			}, 4000);
+			// console.log(data);
+		}
+		res.render('series', {
+			data,
+			tab: 'home',
+			title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
+		});
+	} catch(err){
+		console.log(err)
 	}
-	res.render('series', {
-		data,
-		tab: 'home',
-		title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
-	});
+
+
 });
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

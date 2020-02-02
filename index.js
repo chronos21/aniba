@@ -96,10 +96,12 @@ app.get('/search', async (req, res) => {
 
 app.get('/video', async (req, res) => {
 	let { url, embed } = req.query;
+   let range = req.headers.range
 	let { data, headers } = await axios({
 		url: url,
 		headers: {
-			Referer: embed
+			Referer: embed,
+         Range: range
 		},
 		responseType: 'stream'
 	}).catch((err) => {
@@ -108,7 +110,6 @@ app.get('/video', async (req, res) => {
 	});
 
 	const fileSize = headers['content-length']
-	const range = headers.range
 
 	if (range) {
 		const parts = range.replace(/bytes=/, "").split("-")
@@ -118,7 +119,7 @@ app.get('/video', async (req, res) => {
 		  : fileSize-1
 		const chunksize = (end-start)+1
 		const head = {
-		  'Content-Range': `bytes=${start}-${end}/${fileSize}`,
+		  'Content-Range': `bytes ${start}-${end}/${fileSize}`,
 		  'Accept-Ranges': 'bytes',
 		  'Content-Length': chunksize,
 		  'Content-Type': 'video/mp4',

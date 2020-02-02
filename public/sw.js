@@ -1,7 +1,6 @@
 const cacheName = 'aniba';
 
 const filesToCache = [
-	'/',
 	'/home.ejs',
 	'/detail.ejs',
 	'/search.ejs',

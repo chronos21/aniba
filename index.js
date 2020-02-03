@@ -123,7 +123,7 @@ app.get('/video', async (req, res) => {
 	let reqHeaders = {
 		Referer: embed
 	};
-	if (range) {
+	if (range && !range.includes('=0')) {
 		reqHeaders = {
 			Referer: embed,
 			Range: range
@@ -143,7 +143,7 @@ app.get('/video', async (req, res) => {
 
 	let fileSize = headers['content-length'];
 
-	if (range) {
+	if (range && !range.includes('=0')) {
 		let parts = range.replace(/bytes=/, '').split('-');
 		let start = parseInt(parts[0], 10);
 		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;

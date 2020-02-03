@@ -1,6 +1,14 @@
 const cacheName = 'aniba';
 
-const filesToCache = [ '/index.html', '/avatar.jpg' ];
+const filesToCache = [
+	'/home.ejs',
+	'/detail.ejs',
+	'/search.ejs',
+	'/series.ejs',
+	'/header.ejs',
+	'/footer.ejs',
+	'/images/avatar.jpg'
+];
 
 // Install Service Worker
 self.addEventListener('install', function(event) {

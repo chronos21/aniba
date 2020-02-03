@@ -5,6 +5,8 @@ const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
 const Series = require('./models/series');
 const axios = require('axios');
+const cors = require('cors');
+
 // let key = 'abcdefghijklmnopqrstuvwxyz';
 // let pointer1 = 0;
 // let pointer2 = 0;
@@ -20,12 +22,14 @@ mongoose
 	.then(() => {
 		console.log('Mongo status green');
 		// doCrawl();
-	}).catch(err => console.log(err));
+	})
+	.catch((err) => console.log(err));
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.static('views'));
+app.use(cors());
 
 app.use(express.json());
 
@@ -74,38 +78,59 @@ app.get('/api/comments/:parentId', async (req, res) => {
 });
 
 app.get('/', async (req, res) => {
-	try{
+	let { json } = req.query;
+	try {
 		let data = await crawler.getHome();
-		res.render('home', { data, tab: 'home', title: 'aniba' });
-	} catch(err){
-		console.log(err)
+		if (json) {
+			res.json({ data });
+		} else {
+			res.render('home', { data, tab: 'home', title: 'aniba' });
+		}
+	} catch (err) {
+		console.log(err);
+	}
+});
+
+app.post('/browse', async (req, res) => {
+	try {
+		let { key } = req.body;
+		console.log(key);
+		let data = await crawler.getBrowse(key);
+		res.json({ data });
+	} catch (err) {
+		console.log(err);
 	}
 });
 
 app.get('/search', async (req, res) => {
-	try{
-		let { q } = req.query;
+	try {
+		let { q, json } = req.query;
 		let data = await crawler.getSearch(q);
-		res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
+		if (json) {
+			res.json({ data, q });
+		} else {
+			res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
+		}
 		crawler.saveSeries(data);
-	} catch(err){
-		console.log(err)
+	} catch (err) {
+		console.log(err);
 	}
-
 });
 
 app.get('/video', async (req, res) => {
 	let { url, embed } = req.query;
-	let range = req.headers['range']
+	let range = req.headers['range'];
 	let reqHeaders = {
-		Referer: embed,
-	}
-	if(range){
+		Referer: embed
+	};
+	if (range) {
 		reqHeaders = {
 			Referer: embed,
-        	Range: range
-		}
+			Range: range
+		};
 	}
+
+	console.log(range);
 
 	let { data, headers } = await axios({
 		url: url,
@@ -116,21 +141,19 @@ app.get('/video', async (req, res) => {
 		return res.status(404);
 	});
 
-	let fileSize = headers['content-length']
+	let fileSize = headers['content-length'];
 
 	if (range) {
-		let parts = range.replace(/bytes=/, "").split("-")
-		let start = parseInt(parts[0], 10)
-		let end = parts[1]
-		  ? parseInt(parts[1], 10)
-		  : fileSize-1
-		let chunksize = (end-start)+1
+		let parts = range.replace(/bytes=/, '').split('-');
+		let start = parseInt(parts[0], 10);
+		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;
+		let chunksize = end - start + 1;
 		let head = {
-		  'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-		  'Accept-Ranges': 'bytes',
-		  'Content-Length': chunksize,
-		  'Content-Type': 'video/mp4',
-		}
+			'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+			'Accept-Ranges': 'bytes',
+			'Content-Length': chunksize,
+			'Content-Type': 'video/mp4'
+		};
 		res.writeHead(206, head);
 		data.pipe(res);
 	} else {
@@ -144,18 +167,23 @@ app.get('/video', async (req, res) => {
 });
 
 app.get('/:id', async (req, res) => {
-	try{
+	let { json } = req.query;
+	try {
 		let url = req.params.id;
 		let data = await crawler.getDetail(url);
-		res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
-	} catch(err){
-		console.log(err)
+		if (json) {
+			res.json({ data });
+		} else {
+			res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
+		}
+	} catch (err) {
+		console.log(err);
 	}
-
 });
 
 app.get('/series/:id', async (req, res) => {
-	try{
+	let { json } = req.query;
+	try {
 		let id = req.params.id;
 		let data = await Series.findOne({ href: '/series/' + id });
 		// console.log(data);
@@ -169,16 +197,18 @@ app.get('/series/:id', async (req, res) => {
 			}, 4000);
 			// console.log(data);
 		}
-		res.render('series', {
-			data,
-			tab: 'home',
-			title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
-		});
-	} catch(err){
-		console.log(err)
+		if (json) {
+			res.json({ data });
+		} else {
+			res.render('series', {
+				data,
+				tab: 'home',
+				title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
+			});
+		}
+	} catch (err) {
+		console.log(err);
 	}
-
-
 });
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

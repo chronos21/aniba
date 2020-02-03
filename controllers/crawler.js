@@ -154,9 +154,39 @@ async function saveEpisodes(obj) {
 	}
 }
 
+async function getBrowse(query) {
+	let arr = [];
+
+	let { data } = await axios.get(`https://www.animegg.org/popular-series?${query}`);
+
+	if (data) {
+		let $ = cheerio.load(data);
+		$('#popularAnime .fea').each(function(index) {
+			let href = $(this).find('.rightpop > a').attr('href');
+			let title = $(this).find('.rightpop > a').text();
+			let episodes = '';
+			let status = '';
+			let img = $(this).find('img').attr('src');
+			$(this).find('.btn-sm.disabled').each(function(index) {
+				let text = $(this).text();
+				if (text.includes('Episodes')) {
+					episodes = text.replace(' Episodes', '');
+					episodes = 'Episode: ' + episodes;
+				} else if (text.includes('Ongoing') || text.includes('Completed')) {
+					status = text;
+				}
+			});
+			arr.push({ title, episodes, status, href, img });
+		});
+	}
+
+	return arr;
+}
+
 exports.getHome = getHome;
 exports.getDetail = getDetail;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
 exports.saveSeries = saveSeries;
 exports.saveEpisodes = saveEpisodes;
+exports.getBrowse = getBrowse;

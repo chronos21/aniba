@@ -49,7 +49,7 @@ app.use(express.json());
 // 	}
 // }
 
-app.get('/test/all', async (req, res) => {
+app.get('/api/test/all', async (req, res) => {
 	let sort = { createdAt: -1 };
 	let { skip, limit, q } = req.query;
 	let search = null;
@@ -209,6 +209,10 @@ app.get('/api/series/:id', async (req, res) => {
 	} catch (err) {
 		console.log(err);
 	}
+});
+
+app.get('/*', (req, res) => {
+	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

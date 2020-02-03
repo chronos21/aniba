@@ -77,7 +77,7 @@ app.get('/api/comments/:parentId', async (req, res) => {
 	return res.json({ comments });
 });
 
-app.get('/', async (req, res) => {
+app.get('/api/home', async (req, res) => {
 	let { json } = req.query;
 	try {
 		let data = await crawler.getHome();
@@ -91,7 +91,7 @@ app.get('/', async (req, res) => {
 	}
 });
 
-app.post('/browse', async (req, res) => {
+app.post('/api/browse', async (req, res) => {
 	try {
 		let { key } = req.body;
 		console.log(key);
@@ -102,7 +102,7 @@ app.post('/browse', async (req, res) => {
 	}
 });
 
-app.get('/search', async (req, res) => {
+app.get('/api/search', async (req, res) => {
 	try {
 		let { q, json } = req.query;
 		let data = await crawler.getSearch(q);
@@ -117,7 +117,7 @@ app.get('/search', async (req, res) => {
 	}
 });
 
-app.get('/video', async (req, res) => {
+app.get('/api/video', async (req, res) => {
 	let { url, embed } = req.query;
 	let range = req.headers['range'];
 	let reqHeaders = {
@@ -166,7 +166,7 @@ app.get('/video', async (req, res) => {
 	}
 });
 
-app.get('/:id', async (req, res) => {
+app.get('/api/episodes/:id', async (req, res) => {
 	let { json } = req.query;
 	try {
 		let url = req.params.id;
@@ -181,7 +181,7 @@ app.get('/:id', async (req, res) => {
 	}
 });
 
-app.get('/series/:id', async (req, res) => {
+app.get('/api/series/:id', async (req, res) => {
 	let { json } = req.query;
 	try {
 		let id = req.params.id;

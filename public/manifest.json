@@ -3,22 +3,22 @@
 	"name": "Anibaniba",
 	"icons": [
 		{
-			"src": "/images/ic_launcher48.png",
+			"src": "/ic_launcher48.png",
 			"type": "image/png",
 			"sizes": "48x48"
 		},
 		{
-			"src": "/images/ic_launcher96.png",
+			"src": "/ic_launcher96.png",
 			"type": "image/png",
 			"sizes": "96x96"
 		},
 		{
-			"src": "/images/ic_launcher144.png",
+			"src": "/ic_launcher144.png",
 			"type": "image/png",
 			"sizes": "144x144"
 		},
 		{
-			"src": "/images/ic_launcher192.png",
+			"src": "/ic_launcher192.png",
 			"type": "image/png",
 			"sizes": "192x192"
 		}

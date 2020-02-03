@@ -96,23 +96,51 @@ app.get('/search', async (req, res) => {
 
 app.get('/video', async (req, res) => {
 	let { url, embed } = req.query;
+	let range = req.headers['range']
+	let reqHeaders = {
+		Referer: embed,
+	}
+	if(range){
+		reqHeaders = {
+			Referer: embed,
+        	Range: range
+		}
+	}
+
 	let { data, headers } = await axios({
 		url: url,
-		headers: {
-			Referer: embed
-		},
+		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
 		console.log(err);
 		return res.status(404);
 	});
-	
-		const head = {
+
+	let fileSize = headers['content-length']
+
+	if (range) {
+		let parts = range.replace(/bytes=/, "").split("-")
+		let start = parseInt(parts[0], 10)
+		let end = parts[1]
+		  ? parseInt(parts[1], 10)
+		  : fileSize-1
+		let chunksize = (end-start)+1
+		let head = {
+		  'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+		  'Accept-Ranges': 'bytes',
+		  'Content-Length': chunksize,
+		  'Content-Type': 'video/mp4',
+		}
+		res.writeHead(206, head);
+		data.pipe(res);
+	} else {
+		let head = {
 			'Content-Length': headers['content-length'],
 			'Content-Type': 'video/mp4'
 		};
 		res.writeHead(200, head);
 		data.pipe(res);
+	}
 });
 
 app.get('/:id', async (req, res) => {

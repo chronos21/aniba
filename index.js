@@ -25,7 +25,7 @@ mongoose
 		console.log('Mongo status green');
 		// doCrawl();
 	})
-	.catch((err) => console.log(err));
+	.catch((err) => saveFailure(err, 'Mongo'));
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
@@ -73,6 +73,7 @@ app.post('/api/comments/:parentId', async (req, res) => {
 		let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
 		return res.json({ comment: newComment });
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -83,6 +84,7 @@ app.get('/api/comments/:parentId', async (req, res) => {
 		let comments = await Comment.find({ parentId });
 		return res.json({ comments });
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -97,6 +99,7 @@ app.get('/api/home', async (req, res) => {
 			res.render('home', { data, tab: 'home', title: 'aniba' });
 		}
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -104,10 +107,10 @@ app.get('/api/home', async (req, res) => {
 app.post('/api/browse', async (req, res) => {
 	try {
 		let { key } = req.body;
-		console.log(key);
 		let data = await crawler.getBrowse(key);
 		res.json({ data });
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -123,6 +126,7 @@ app.get('/api/search', async (req, res) => {
 		}
 		crawler.saveSeries(data);
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -146,7 +150,7 @@ app.get('/api/video', async (req, res) => {
 		responseType: 'stream'
 	}).catch((err) => {
 		saveFailure(err, req.url);
-		return res.status(404);
+		return res.status(404).end();
 	});
 
 	let fileSize = headers['content-length'];
@@ -185,6 +189,7 @@ app.get('/api/episodes/:id', async (req, res) => {
 			res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
 		}
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });
@@ -215,6 +220,7 @@ app.get('/api/series/:id', async (req, res) => {
 			});
 		}
 	} catch (err) {
+		res.status(404).end();
 		saveFailure(err, req.url);
 	}
 });

@@ -3,9 +3,11 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
+const Failure = require('./models/failure');
 const Series = require('./models/series');
 const axios = require('axios');
 const cors = require('cors');
+const path = require('path');
 
 // let key = 'abcdefghijklmnopqrstuvwxyz';
 // let pointer1 = 0;
@@ -64,17 +66,25 @@ app.get('/api/test/all', async (req, res) => {
 });
 
 app.post('/api/comments/:parentId', async (req, res) => {
-	let { text, authorId } = req.body;
-	let { parentId } = req.params;
-	if (!text || !parentId || !authorId) return res.status(400);
-	let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
-	return res.json({ comment: newComment });
+	try {
+		let { text, authorId } = req.body;
+		let { parentId } = req.params;
+		if (!text || !parentId || !authorId) return res.status(400);
+		let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
+		return res.json({ comment: newComment });
+	} catch (err) {
+		saveFailure(err, req.url);
+	}
 });
 
 app.get('/api/comments/:parentId', async (req, res) => {
-	let { parentId } = req.params;
-	let comments = await Comment.find({ parentId });
-	return res.json({ comments });
+	try {
+		let { parentId } = req.params;
+		let comments = await Comment.find({ parentId });
+		return res.json({ comments });
+	} catch (err) {
+		saveFailure(err, req.url);
+	}
 });
 
 app.get('/api/home', async (req, res) => {
@@ -87,7 +97,7 @@ app.get('/api/home', async (req, res) => {
 			res.render('home', { data, tab: 'home', title: 'aniba' });
 		}
 	} catch (err) {
-		console.log(err);
+		saveFailure(err, req.url);
 	}
 });
 
@@ -98,7 +108,7 @@ app.post('/api/browse', async (req, res) => {
 		let data = await crawler.getBrowse(key);
 		res.json({ data });
 	} catch (err) {
-		console.log(err);
+		saveFailure(err, req.url);
 	}
 });
 
@@ -113,7 +123,7 @@ app.get('/api/search', async (req, res) => {
 		}
 		crawler.saveSeries(data);
 	} catch (err) {
-		console.log(err);
+		saveFailure(err, req.url);
 	}
 });
 
@@ -130,14 +140,12 @@ app.get('/api/video', async (req, res) => {
 		};
 	}
 
-	console.log(range);
-
 	let { data, headers } = await axios({
 		url: url,
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
-		console.log(err);
+		saveFailure(err, req.url);
 		return res.status(404);
 	});
 
@@ -177,7 +185,7 @@ app.get('/api/episodes/:id', async (req, res) => {
 			res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
 		}
 	} catch (err) {
-		console.log(err);
+		saveFailure(err, req.url);
 	}
 });
 
@@ -207,12 +215,29 @@ app.get('/api/series/:id', async (req, res) => {
 			});
 		}
 	} catch (err) {
-		console.log(err);
+		saveFailure(err, req.url);
 	}
+});
+
+app.get('/api/failures', async (req, res) => {
+	let sort = { createdAt: -1 };
+	let { skip, limit, q } = req.query;
+	if (!limit || isNaN(Number(limit))) limit = 99;
+	if (!skip || isNaN(Number(skip))) skip = 0;
+	let data = await Failure.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
+	return res.status(200).json({ data });
 });
 
 app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+function saveFailure(obj, source) {
+	Failure.create({ text: JSON.stringify(obj), source })
+		.then(() => {
+			console.log('Failure Saved');
+		})
+		.catch(() => console.log('Failure not saved'));
+}
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

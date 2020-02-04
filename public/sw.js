@@ -9,7 +9,7 @@ self.addEventListener('install', function(event) {
 	event.waitUntil(
 		// Open the Cache
 		caches.open(cacheName).then(function(cache) {
-			console.log('Service Worker: Caching App Shell at the moment......');
+			// console.log('Service Worker: Caching App Shell at the moment......');
 
 			// Add Files to the Cache
 			return cache.addAll(filesToCache);
@@ -26,7 +26,7 @@ self.addEventListener('activate', function(event) {
 			return Promise.all(
 				cacheNames.map(function(key) {
 					if (key !== cacheName) {
-						console.log('Service Worker: Removing Old Cache', key);
+						// console.log('Service Worker: Removing Old Cache', key);
 						return caches.delete(key);
 					}
 				})
@@ -39,9 +39,9 @@ self.addEventListener('activate', function(event) {
 // self.clients.claim();
 
 self.addEventListener('fetch', function(event) {
-	console.log('Service Worker: Fetch', event.request.url);
+	// console.log('Service Worker: Fetch', event.request.url);
 
-	console.log('Url', event.request.url);
+	// console.log('Url', event.request.url);
 
 	event.respondWith(
 		caches.match(event.request).then(function(response) {

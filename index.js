@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
 const Failure = require('./models/failure');
+const Episode = require('./models/episode');
 const Series = require('./models/series');
 const axios = require('axios');
 const cors = require('cors');
@@ -23,7 +24,6 @@ mongoose
 	})
 	.then(() => {
 		console.log('Mongo status green');
-		// doCrawl();
 	})
 	.catch((err) => saveFailure(err, 'Mongo'));
 
@@ -98,6 +98,8 @@ app.get('/api/home', async (req, res) => {
 		} else {
 			res.render('home', { data, tab: 'home', title: 'aniba' });
 		}
+
+		crawler.saveNewReleases(data);
 	} catch (err) {
 		res.status(404).end();
 		saveFailure(err, req.url);
@@ -234,9 +236,18 @@ app.get('/api/failures', async (req, res) => {
 	return res.status(200).json({ data });
 });
 
-app.get('/*', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/api/new-releases', async (req, res) => {
+	let sort = { createdAt: -1 };
+	let { skip, limit, q } = req.query;
+	if (!limit || isNaN(Number(limit))) limit = 99;
+	if (!skip || isNaN(Number(skip))) skip = 0;
+	let data = await Episode.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
+	return res.status(200).json({ data });
 });
+
+// app.get('/*', (req, res) => {
+// 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 function saveFailure(obj, source) {
 	Failure.create({ text: JSON.stringify(obj), source })

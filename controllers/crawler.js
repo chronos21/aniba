@@ -1,6 +1,7 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
 const Series = require('../models/series');
+const Episode = require('../models/episode');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -131,6 +132,33 @@ async function saveSeries(arr) {
 	}
 }
 
+async function saveNewReleases(arr) {
+	let count = 0;
+	for (let item of arr) {
+		let parentId = item.Show.title;
+		let title = item.Episode.title;
+		let href = item.Episode.uri;
+		let releasedAt = item.createdAt;
+		let img = item.Show.thumbnailUrl;
+
+		let ep = await Episode.findOne({ parentId, title });
+		if (!ep) {
+			let newEp = await Episode.create({
+				parentId,
+				title,
+				href,
+				img,
+				releasedAt
+			}).catch((err) => console.log(err));
+			if (newEp) {
+				count += 1;
+			}
+		}
+	}
+
+	return count;
+}
+
 async function saveEpisodes(obj) {
 	let { title, episodes, desc } = obj;
 	let series = await Series.findOne({ title: title });
@@ -189,4 +217,5 @@ exports.getSearch = getSearch;
 exports.getSeries = getSeries;
 exports.saveSeries = saveSeries;
 exports.saveEpisodes = saveEpisodes;
+exports.saveNewReleases = saveNewReleases;
 exports.getBrowse = getBrowse;

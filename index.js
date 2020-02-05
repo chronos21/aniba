@@ -148,17 +148,6 @@ app.get('/api/home', async (req, res) => {
 	}
 });
 
-// app.post('/api/browse', async (req, res) => {
-// 	try {
-// 		let { key } = req.body;
-// 		let data = await crawler.getBrowse(key);
-// 		res.json({ data });
-// 	} catch (err) {
-// 		res.status(404).json({err});;
-// 		saveFailure(err, req.url);
-// 	}
-// });
-
 app.get('/api/search', async (req, res) => {
 	try {
 		let { q, json } = req.query;
@@ -271,13 +260,35 @@ app.get('/api/series/:id', async (req, res) => {
 	}
 });
 
-app.get('/api/failures', async (req, res) => {
+app.get('/api/stats/:type', async (req, res) => {
+	let model;
+	let { type } = req.params;
+	switch (type) {
+		case 'failure':
+			model = Failure;
+			break;
+		case 'comment':
+			model = Comment;
+			break;
+		case 'home':
+			model = Home;
+			break;
+		case 'series':
+			model = Series;
+			break;
+		case 'episode':
+			model = Episode;
+			break;
+		default:
+			res.status(404).end();
+			break;
+	}
 	let sort = { createdAt: -1 };
 	let { skip, limit, q } = req.query;
 	if (!limit || isNaN(Number(limit))) limit = 99;
 	if (!skip || isNaN(Number(skip))) skip = 0;
-	let data = await Failure.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
-	return res.status(200).json({ data });
+	let data = await model.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
+	res.status(200).json({ data });
 });
 
 app.get('/api/new-releases', async (req, res) => {

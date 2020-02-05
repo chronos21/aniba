@@ -15,6 +15,7 @@ const homeSchema = new mongoose.Schema({
 	    type: Number,
 	    required: true
 	},
+	content: Array,
 	createdAt: {
 		type: Date,
 		default: Date.now

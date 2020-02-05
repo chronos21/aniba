@@ -74,7 +74,7 @@ app.post('/api/comments/:parentId', async (req, res) => {
 		let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
 		return res.json({ comment: newComment });
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});;
 		saveFailure(err, req.url);
 	}
 });
@@ -85,7 +85,7 @@ app.get('/api/comments/:parentId', async (req, res) => {
 		let comments = await Comment.find({ parentId });
 		return res.json({ comments });
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});;
 		saveFailure(err, req.url);
 	}
 });
@@ -93,27 +93,45 @@ app.get('/api/comments/:parentId', async (req, res) => {
 app.post('/api/home', async(req, res) => {
 	try{
 		let {type, key} = req.body;
-		if(type === 'browse' && !key) res.status(404).end()
-		// let data = await Home.create({...req.body})
-		res.json({...req.body})
+		console.log(req.body)
+		if(type === 'browse' && !key) res.status(404).json({err});
+		let data = await Home.create({...req.body})
+		res.json({data})
 	} catch(err){
 		res.status(404).json({err})
-		saveFailure(err)
+		saveFailure(err, req.url)
 	}
 
 
 })
 
+app.delete('/api/home/:title', async(req, res) => {
+	try {
+		let { title } = req.params;
+		let data = await Home.deleteOne({ title })
+		res.json(data)
+	} catch(err){
+		res.status(404).json({ err });
+		saveFailure(err, req.url);
+	}
+})
+
 app.get('/api/home', async (req, res) => {
-	let { json, skip, limit, } = req.query;
+	let { json, skip, limit, newReleases} = req.query;
+	let sort = { order: 1 };
+	let search = {type: 'browse'}
+	if(newReleases) search.type = 'new_releases'
 	try {
 		if (!limit || isNaN(Number(limit))) limit = 99;
 		if (!skip || isNaN(Number(skip))) skip = 0;
-		let data = await Home.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
-		for(let item of arr){
+		// console.log(req.query)
+		let data = await Home.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
+		console.log(data)
+		for(let item of data){
 			let content = [];
 			if(item.type === 'new_releases'){
 				content = await crawler.getHome()
+				crawler.saveNewReleases(content);
 			} else {
 				content = await crawler.getBrowse(item.key)
 			}
@@ -122,12 +140,10 @@ app.get('/api/home', async (req, res) => {
 		if (json) {
 			res.json({ data });
 		} else {
-			res.status(404).end()
+			res.status(404).json({err});
 		}
-
-		crawler.saveNewReleases(data);
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});
 		saveFailure(err, req.url);
 	}
 });
@@ -138,7 +154,7 @@ app.get('/api/home', async (req, res) => {
 // 		let data = await crawler.getBrowse(key);
 // 		res.json({ data });
 // 	} catch (err) {
-// 		res.status(404).end();
+// 		res.status(404).json({err});;
 // 		saveFailure(err, req.url);
 // 	}
 // });
@@ -154,7 +170,7 @@ app.get('/api/search', async (req, res) => {
 		}
 		crawler.saveSeries(data);
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});;
 		saveFailure(err, req.url);
 	}
 });
@@ -165,45 +181,23 @@ app.get('/api/video', async (req, res) => {
 	let reqHeaders = {
 		Referer: embed
 	};
-	if (range && !range.includes('=0')) {
+	if (range && !range.includes('bytes=0')) {
 		reqHeaders = {
 			Referer: embed,
 			Range: range
 		};
 	}
 
-	let { data, headers } = await axios({
+	let { data } = await axios({
 		url: url,
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
 		saveFailure(err, req.url);
-		return res.status(404).end();
+		return res.status(404).json({err});;
 	});
 
-	let fileSize = headers['content-length'];
-
-	if (range && !range.includes('s=0')) {
-		let parts = range.replace(/bytes=/, '').split('-');
-		let start = parseInt(parts[0], 10);
-		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;
-		let chunksize = end - start + 1;
-		let head = {
-			'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-			'Accept-Ranges': 'bytes',
-			'Content-Length': chunksize,
-			'Content-Type': 'video/mp4'
-		};
-		res.writeHead(206, head);
-		data.pipe(res);
-	} else {
-		let head = {
-			'Content-Length': headers['content-length'],
-			'Content-Type': 'video/mp4'
-		};
-		res.writeHead(200, head);
-		data.pipe(res);
-	}
+	data.pipe(res);
 });
 
 app.get('/api/episodes/:id', async (req, res) => {
@@ -217,7 +211,7 @@ app.get('/api/episodes/:id', async (req, res) => {
 			res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
 		}
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});;
 		saveFailure(err, req.url);
 	}
 });
@@ -248,7 +242,7 @@ app.get('/api/series/:id', async (req, res) => {
 			});
 		}
 	} catch (err) {
-		res.status(404).end();
+		res.status(404).json({err});;
 		saveFailure(err, req.url);
 	}
 });

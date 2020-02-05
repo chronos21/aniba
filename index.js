@@ -130,12 +130,12 @@ app.get('/api/home', async (req, res) => {
 		for (let item of data) {
 			let content = [];
 			if (item.type === 'new_releases') {
-				content = await crawler.getHome();
+				item.content = await crawler.getHome();
 				crawler.saveNewReleases(content);
-			} else {
-				content = await crawler.getBrowse(item.key);
+			} else if (item.content.length < 1) {
+				item.content = await crawler.getBrowse(item.key);
+				item.save(() => console.log(`${item.title}'s content saved!`));
 			}
-			item.content = content;
 		}
 		if (json) {
 			res.json({ data, total });

@@ -72,9 +72,9 @@ app.post('/api/comments/:parentId', async (req, res) => {
 		let { parentId } = req.params;
 		if (!text || !parentId || !authorId) return res.status(400);
 		let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
-		return res.json({ comment: newComment });
+		res.json({ comment: newComment });
 	} catch (err) {
-		res.status(404).json({err});;
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });
@@ -85,65 +85,65 @@ app.get('/api/comments/:parentId', async (req, res) => {
 		let comments = await Comment.find({ parentId });
 		return res.json({ comments });
 	} catch (err) {
-		res.status(404).json({err});;
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });
 
-app.post('/api/home', async(req, res) => {
-	try{
-		let {type, key} = req.body;
-		console.log(req.body)
-		if(type === 'browse' && !key) res.status(404).json({err});
-		let data = await Home.create({...req.body})
-		res.json({data})
-	} catch(err){
-		res.status(404).json({err})
-		saveFailure(err, req.url)
-	}
-
-
-})
-
-app.delete('/api/home/:title', async(req, res) => {
+app.post('/api/home', async (req, res) => {
 	try {
-		let { title } = req.params;
-		let data = await Home.deleteOne({ title })
-		res.json(data)
-	} catch(err){
+		let { type, key } = req.body;
+		console.log(req.body);
+		if (type === 'browse' && !key) res.status(404).json({ err });
+		let data = await Home.create({ ...req.body });
+		res.json({ data });
+	} catch (err) {
 		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
-})
+});
+
+app.delete('/api/home/:title', async (req, res) => {
+	try {
+		let { title } = req.params;
+		let data = await Home.deleteOne({ title });
+		res.json(data);
+	} catch (err) {
+		res.status(404).json({ err });
+		saveFailure(err, req.url);
+	}
+});
 
 app.get('/api/home', async (req, res) => {
-	let { json, skip, limit, newReleases} = req.query;
+	let { json, skip, limit, type } = req.query;
 	let sort = { order: 1 };
-	let search = {type: 'browse'}
-	if(newReleases) search.type = 'new_releases'
+	let search = { type };
 	try {
 		if (!limit || isNaN(Number(limit))) limit = 99;
 		if (!skip || isNaN(Number(skip))) skip = 0;
-		// console.log(req.query)
 		let data = await Home.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
-		console.log(data)
-		for(let item of data){
+		let total = 0;
+		if (type === 'new_releases') {
+			total = await Home.find({ type: 'browse' }).countDocuments();
+		}
+
+		for (let item of data) {
 			let content = [];
-			if(item.type === 'new_releases'){
-				content = await crawler.getHome()
+			if (item.type === 'new_releases') {
+				content = await crawler.getHome();
 				crawler.saveNewReleases(content);
 			} else {
-				content = await crawler.getBrowse(item.key)
+				content = await crawler.getBrowse(item.key);
 			}
-			item.content = content
+			item.content = content;
 		}
 		if (json) {
-			res.json({ data });
+			res.json({ data, total });
 		} else {
-			res.status(404).json({err});
+			res.status(404).json({ err });
 		}
 	} catch (err) {
-		res.status(404).json({err});
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });
@@ -170,7 +170,7 @@ app.get('/api/search', async (req, res) => {
 		}
 		crawler.saveSeries(data);
 	} catch (err) {
-		res.status(404).json({err});;
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });
@@ -188,13 +188,13 @@ app.get('/api/video', async (req, res) => {
 		};
 	}
 
-	let { data } = await axios({
+	let res = await axios({
 		url: url,
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
 		saveFailure(err, req.url);
-		return res.status(404).json({err});;
+		return res.status(404).json({ err });
 	});
 
 	data.pipe(res);
@@ -211,7 +211,7 @@ app.get('/api/episodes/:id', async (req, res) => {
 			res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
 		}
 	} catch (err) {
-		res.status(404).json({err});;
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });
@@ -242,7 +242,7 @@ app.get('/api/series/:id', async (req, res) => {
 			});
 		}
 	} catch (err) {
-		res.status(404).json({err});;
+		res.status(404).json({ err });
 		saveFailure(err, req.url);
 	}
 });

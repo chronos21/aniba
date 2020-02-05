@@ -198,8 +198,7 @@ async function getBrowse(query) {
 			$(this).find('.btn-sm.disabled').each(function(index) {
 				let text = $(this).text();
 				if (text.includes('Episodes')) {
-					episodes = text.replace(' Episodes', '');
-					episodes = 'Episode: ' + episodes;
+					episodes = text;
 				} else if (text.includes('Ongoing') || text.includes('Completed')) {
 					status = text;
 				}

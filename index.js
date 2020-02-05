@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const crawler = require('./controllers/crawler');
 const Comment = require('./models/comment');
 const Failure = require('./models/failure');
+const Home = require('./models/home');
 const Episode = require('./models/episode');
 const Series = require('./models/series');
 const axios = require('axios');
@@ -89,14 +90,39 @@ app.get('/api/comments/:parentId', async (req, res) => {
 	}
 });
 
+app.post('/api/home', async(req, res) => {
+	try{
+		let {type, key} = req.body;
+		if(type === 'browse' && !key) res.status(404).end()
+		// let data = await Home.create({...req.body})
+		res.json({...req.body})
+	} catch(err){
+		res.status(404).json({err})
+		saveFailure(err)
+	}
+
+
+})
+
 app.get('/api/home', async (req, res) => {
-	let { json } = req.query;
+	let { json, skip, limit, } = req.query;
 	try {
-		let data = await crawler.getHome();
+		if (!limit || isNaN(Number(limit))) limit = 99;
+		if (!skip || isNaN(Number(skip))) skip = 0;
+		let data = await Home.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
+		for(let item of arr){
+			let content = [];
+			if(item.type === 'new_releases'){
+				content = await crawler.getHome()
+			} else {
+				content = await crawler.getBrowse(item.key)
+			}
+			item.content = content
+		}
 		if (json) {
 			res.json({ data });
 		} else {
-			res.render('home', { data, tab: 'home', title: 'aniba' });
+			res.status(404).end()
 		}
 
 		crawler.saveNewReleases(data);
@@ -106,16 +132,16 @@ app.get('/api/home', async (req, res) => {
 	}
 });
 
-app.post('/api/browse', async (req, res) => {
-	try {
-		let { key } = req.body;
-		let data = await crawler.getBrowse(key);
-		res.json({ data });
-	} catch (err) {
-		res.status(404).end();
-		saveFailure(err, req.url);
-	}
-});
+// app.post('/api/browse', async (req, res) => {
+// 	try {
+// 		let { key } = req.body;
+// 		let data = await crawler.getBrowse(key);
+// 		res.json({ data });
+// 	} catch (err) {
+// 		res.status(404).end();
+// 		saveFailure(err, req.url);
+// 	}
+// });
 
 app.get('/api/search', async (req, res) => {
 	try {
@@ -157,7 +183,7 @@ app.get('/api/video', async (req, res) => {
 
 	let fileSize = headers['content-length'];
 
-	if (range && !range.includes('=0')) {
+	if (range && !range.includes('s=0')) {
 		let parts = range.replace(/bytes=/, '').split('-');
 		let start = parseInt(parts[0], 10);
 		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;

@@ -181,23 +181,47 @@ app.get('/api/video', async (req, res) => {
 	let reqHeaders = {
 		Referer: embed
 	};
-	if (range && !range.includes('bytes=0')) {
+	if (range && !range.includes('s=0')) {
 		reqHeaders = {
 			Referer: embed,
 			Range: range
 		};
 	}
 
-	let res = await axios({
+	let { data, headers } = await axios({
 		url: url,
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
 		saveFailure(err, req.url);
-		return res.status(404).json({ err });
+		return res.status(404).end();
 	});
 
-	data.pipe(res);
+	let fileSize = headers['content-length'];
+
+	if (range && !range.includes('=0')) {
+		let parts = range.replace(/bytes=/, '').split('-');
+		let start = parseInt(parts[0], 10);
+		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;
+		let chunksize = end - start + 1;
+		let head = {
+			'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+			'Accept-Ranges': 'bytes',
+			'Content-Length': chunksize,
+			'Content-Type': 'video/mp4'
+		};
+		console.log(head);
+
+		res.writeHead(206, head);
+		data.pipe(res);
+	} else {
+		let head = {
+			'Content-Length': headers['content-length'],
+			'Content-Type': 'video/mp4'
+		};
+		res.writeHead(200, head);
+		data.pipe(res);
+	}
 });
 
 app.get('/api/episodes/:id', async (req, res) => {

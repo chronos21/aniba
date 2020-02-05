@@ -260,35 +260,36 @@ app.get('/api/series/:id', async (req, res) => {
 	}
 });
 
-app.get('/api/stats/:type', async (req, res) => {
-	let model;
-	let { type } = req.params;
-	switch (type) {
-		case 'failure':
-			model = Failure;
-			break;
-		case 'comment':
-			model = Comment;
-			break;
-		case 'home':
-			model = Home;
-			break;
-		case 'series':
-			model = Series;
-			break;
-		case 'episode':
-			model = Episode;
-			break;
-		default:
-			res.status(404).end();
-			break;
+app.delete('/api/stats/:type', async (req, res) => {
+	try {
+		let { type } = req.params;
+		let schema = findSchema(type);
+		// console.log(schema);
+		console.log(req.query);
+		if (!schema) return res.status(404).end();
+		let data = await schema.deleteOne({ ...req.query });
+		res.status(200).json({ data, type });
+	} catch (err) {
+		res.status(404).json({ err });
+		saveFailure(err, req.url);
 	}
-	let sort = { createdAt: -1 };
-	let { skip, limit, q } = req.query;
-	if (!limit || isNaN(Number(limit))) limit = 99;
-	if (!skip || isNaN(Number(skip))) skip = 0;
-	let data = await model.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
-	res.status(200).json({ data });
+});
+
+app.get('/api/stats/:type', async (req, res) => {
+	try {
+		let { type } = req.params;
+		let schema = findSchema(type);
+		if (!schema) return res.status(404).end();
+		let sort = { createdAt: -1 };
+		let { skip, limit, q } = req.query;
+		if (!limit || isNaN(Number(limit))) limit = 99;
+		if (!skip || isNaN(Number(skip))) skip = 0;
+		let data = await schema.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
+		res.status(200).json({ data, type });
+	} catch (err) {
+		res.status(404).json({ err });
+		saveFailure(err, req.url);
+	}
 });
 
 app.get('/api/new-releases', async (req, res) => {
@@ -310,6 +311,31 @@ function saveFailure(obj, source) {
 			console.log('Failure Saved');
 		})
 		.catch(() => console.log('Failure not saved'));
+}
+
+function findSchema(type) {
+	let schema;
+	switch (type) {
+		case 'failure':
+			schema = Failure;
+			break;
+		case 'comment':
+			schema = Comment;
+			break;
+		case 'home':
+			schema = Home;
+			break;
+		case 'series':
+			schema = Series;
+			break;
+		case 'episode':
+			schema = Episode;
+			break;
+		default:
+			break;
+	}
+
+	return schema;
 }
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

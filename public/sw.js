@@ -3,7 +3,7 @@ const cacheName = 'aniba';
 const filesToCache = [ '/index.html', '/avatar.jpg' ];
 
 // Install Service Worker
-self.addEventListener('install', function(event) {
+this.addEventListener('install', function(event) {
 	console.log('Service Worker: Installing....');
 
 	event.waitUntil(
@@ -18,7 +18,7 @@ self.addEventListener('install', function(event) {
 });
 
 // Fired when the Service Worker starts up
-self.addEventListener('activate', function(event) {
+this.addEventListener('activate', function(event) {
 	console.log('Service Worker: Activating....');
 
 	event.waitUntil(
@@ -33,11 +33,12 @@ self.addEventListener('activate', function(event) {
 			);
 		})
 	);
-	return self.clients.claim();
+	return this.clients.claim();
 });
-self.addEventListener('fetch', function(event) {
+
+this.addEventListener('fetch', function(event) {
 	let url = event.request.url;
-	if (!url.includes('/video') && !url.includes('/comments')) {
+	if (!url.includes('/video')) {
 		event.respondWith(
 			caches.match(event.request).then(function(response) {
 				return response || fetch(event.request);

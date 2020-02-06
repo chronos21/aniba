@@ -121,8 +121,6 @@ app.get('/api/home', async (req, res) => {
 			let content = [];
 			if (item.type === 'new_releases') {
 				item.content = await Episode.find().limit(20).sort({ releasedAt: -1 });
-				console.log('item.content');
-				console.log(item.content);
 				crawler.saveNewReleases(content);
 			} else if (item.content.length < 1) {
 				item.content = await crawler.getBrowse(item.key);

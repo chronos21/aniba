@@ -35,3 +35,13 @@ self.addEventListener('activate', function(event) {
 	);
 	return self.clients.claim();
 });
+self.addEventListener('fetch', function(event) {
+	let url = event.request.url;
+	if (!url.includes('/video')) {
+		event.respondWith(
+			caches.match(event.request).then(function(response) {
+				return response || fetch(event.request);
+			})
+		);
+	}
+});

@@ -1,19 +1,15 @@
 const express = require('express');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const crawler = require('./controllers/crawler');
+const crawler = require('./handlers/crawler');
+const helper = require('./handlers/helper');
 const Comment = require('./models/comment');
-const Failure = require('./models/failure');
 const Home = require('./models/home');
 const Episode = require('./models/episode');
 const Series = require('./models/series');
 const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
-
-// let key = 'abcdefghijklmnopqrstuvwxyz';
-// let pointer1 = 0;
-// let pointer2 = 0;
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,7 +22,7 @@ mongoose
 	.then(() => {
 		console.log('Mongo status green');
 	})
-	.catch((err) => saveFailure(err, 'Mongo'));
+	.catch((err) => helper.saveLog(err, 'Mongo'));
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
@@ -36,22 +32,6 @@ app.use(cors());
 
 app.use(express.json());
 
-// async function doCrawl() {
-// 	let q = key[pointer1] + key[pointer2];
-// 	await crawler.saveSeries(q);
-// 	if (q == 'zz') {
-// 		return;
-// 	} else {
-// 		if (pointer2 === key.length - 1) {
-// 			pointer1 += 1;
-// 			pointer2 = 0;
-// 		} else {
-// 			pointer2 += 1;
-// 		}
-// 		return doCrawl();
-// 	}
-// }
-
 app.get('/api/test/all', async (req, res) => {
 	let sort = { createdAt: -1 };
 	let { skip, limit, q } = req.query;
@@ -59,7 +39,6 @@ app.get('/api/test/all', async (req, res) => {
 	if (q) {
 		search = { title: new RegExp(q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi') };
 	}
-	// console.log(search);
 	if (!limit || isNaN(Number(limit))) limit = 99;
 	if (!skip || isNaN(Number(skip))) skip = 0;
 	let series = await Series.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
@@ -75,7 +54,7 @@ app.post('/api/comments/:parentId', async (req, res) => {
 		res.json({ comment: newComment });
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -86,11 +65,22 @@ app.get('/api/comments/:parentId', async (req, res) => {
 		return res.json({ comments });
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
-app.post('/api/home', async (req, res) => {
+app.get('/api/stats/home/new', async (req, res) => {
+	try {
+		let unFields = [ '__v', 'id', 'createdAt', '_id' ];
+		let data = Object.keys(Home.schema.tree);
+		data = data.filter((item) => !unFields.includes(item));
+		res.json({ data });
+	} catch (err) {
+		res.status(404).json({ err });
+		helper.saveLog(err, req.url);
+	}
+});
+app.post('/api/stats/home/new', async (req, res) => {
 	try {
 		let { type, key } = req.body;
 		console.log(req.body);
@@ -99,7 +89,7 @@ app.post('/api/home', async (req, res) => {
 		res.json({ data });
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -110,7 +100,7 @@ app.delete('/api/home/:title', async (req, res) => {
 		res.json(data);
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -130,11 +120,13 @@ app.get('/api/home', async (req, res) => {
 		for (let item of data) {
 			let content = [];
 			if (item.type === 'new_releases') {
-				item.content = await crawler.getHome();
+				item.content = await Episode.find().limit(20).sort({ releasedAt: -1 });
+				console.log('item.content');
+				console.log(item.content);
 				crawler.saveNewReleases(content);
 			} else if (item.content.length < 1) {
 				item.content = await crawler.getBrowse(item.key);
-				item.save(() => console.log(`${item.title}'s content saved!`));
+				item.save(() => helper.saveLog(`${item.title}'s content saved!`));
 			}
 		}
 		if (json) {
@@ -144,7 +136,7 @@ app.get('/api/home', async (req, res) => {
 		}
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -160,7 +152,7 @@ app.get('/api/search', async (req, res) => {
 		crawler.saveSeries(data);
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -182,7 +174,7 @@ app.get('/api/video', async (req, res) => {
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 		return res.status(404).end();
 	});
 
@@ -199,7 +191,6 @@ app.get('/api/video', async (req, res) => {
 			'Content-Length': chunksize,
 			'Content-Type': 'video/mp4'
 		};
-		console.log(head);
 
 		res.writeHead(206, head);
 		data.pipe(res);
@@ -225,7 +216,7 @@ app.get('/api/episodes/:id', async (req, res) => {
 		}
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -234,7 +225,6 @@ app.get('/api/series/:id', async (req, res) => {
 	try {
 		let id = req.params.id;
 		let data = await Series.findOne({ href: '/series/' + id });
-		// console.log(data);
 		if (data == null || !Array.isArray(data.episodes)) {
 			data = await crawler.getSeries(id);
 			crawler.saveEpisodes(data);
@@ -243,7 +233,6 @@ app.get('/api/series/:id', async (req, res) => {
 				let newData = await crawler.getSeries(id);
 				crawler.saveEpisodes(newData);
 			}, 4000);
-			// console.log(data);
 		}
 		if (json) {
 			res.json({ data });
@@ -256,14 +245,14 @@ app.get('/api/series/:id', async (req, res) => {
 		}
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
 app.delete('/api/stats/:type', async (req, res) => {
 	try {
 		let { type } = req.params;
-		let schema = findSchema(type);
+		let schema = helper.findSchema(type);
 		// console.log(schema);
 		console.log(req.query);
 		if (!schema) return res.status(404).end();
@@ -271,14 +260,14 @@ app.delete('/api/stats/:type', async (req, res) => {
 		res.status(200).json({ data, type });
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
 app.get('/api/stats/:type', async (req, res) => {
 	try {
 		let { type } = req.params;
-		let schema = findSchema(type);
+		let schema = helper.findSchema(type);
 		if (!schema) return res.status(404).end();
 		let sort = { createdAt: -1 };
 		let { skip, limit, q } = req.query;
@@ -288,7 +277,7 @@ app.get('/api/stats/:type', async (req, res) => {
 		res.status(200).json({ data, type });
 	} catch (err) {
 		res.status(404).json({ err });
-		saveFailure(err, req.url);
+		helper.saveLog(err, req.url);
 	}
 });
 
@@ -304,38 +293,5 @@ app.get('/api/new-releases', async (req, res) => {
 app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
-function saveFailure(obj, source) {
-	Failure.create({ text: JSON.stringify(obj), source })
-		.then(() => {
-			console.log('Failure Saved');
-		})
-		.catch(() => console.log('Failure not saved'));
-}
-
-function findSchema(type) {
-	let schema;
-	switch (type) {
-		case 'failure':
-			schema = Failure;
-			break;
-		case 'comment':
-			schema = Comment;
-			break;
-		case 'home':
-			schema = Home;
-			break;
-		case 'series':
-			schema = Series;
-			break;
-		case 'episode':
-			schema = Episode;
-			break;
-		default:
-			break;
-	}
-
-	return schema;
-}
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

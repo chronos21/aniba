@@ -2,6 +2,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const Series = require('../models/series');
 const Episode = require('../models/episode');
+const helper = require('./helper');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -31,7 +32,7 @@ async function getSearch(q) {
 	return arr;
 }
 
-async function getHome() {
+async function getNewReleases() {
 	let res = await axios.post('https://www.animegg.org/index/recentReleases');
 	let arr = [];
 	if (res.data.recentReleases.length > 0) {
@@ -50,7 +51,7 @@ async function getDetail(url) {
 		embed: ''
 	};
 	if (!url.includes('-')) return obj;
-	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log(err));
+	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => helper.saveLog(err));
 
 	if (res) {
 		let $ = cheerio.load(res.data);
@@ -83,7 +84,7 @@ async function getVideo(url) {
 }
 
 async function getSeries(url, doCrawl = false) {
-	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => console.log(err));
+	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => helper.saveLog(err));
 	let obj = {
 		title: '',
 		status: '',
@@ -116,23 +117,27 @@ async function getSeries(url, doCrawl = false) {
 async function saveSeries(arr) {
 	if (typeof arr === 'string') arr = await getSearch(arr);
 	if (arr.length > 0) {
-		let series = await Series.find().catch((err) => console.log(err));
+		let series = await Series.find().catch((err) => helper.saveLog(err));
 		let length = series.length;
 		series = series.map((item) => item.title);
-		// console.log(series);
+		// helper.saveLog(series);
 		for (let el of arr) {
 			if (!series.includes(el.title)) {
 				let newSeries = await Series.create({ ...el });
-				console.log(newSeries);
+				helper.saveLog(newSeries);
 			}
 		}
-		let newLength = await Series.find().catch((err) => console.log(err));
-		newLength = newLength.length;
-		console.log(length, newLength);
+		let newLength = await Series.countDocuments();
+		helper.saveLog(length, newLength);
+		if (newLength - length > 0) {
+			helper.saveLog(`Created ${newLength - length}} new series`, 'saveSeries');
+		}
 	}
 }
 
-async function saveNewReleases(arr) {
+async function saveNewReleases() {
+	let arr = await getNewReleases();
+
 	let count = 0;
 	for (let item of arr) {
 		let parentId = item.Show.title;
@@ -149,14 +154,15 @@ async function saveNewReleases(arr) {
 				href,
 				img,
 				releasedAt
-			}).catch((err) => console.log(err));
+			}).catch((err) => helper.saveLog(err));
 			if (newEp) {
 				count += 1;
 			}
 		}
 	}
-
-	return count;
+	if (count > 0) {
+		helper.saveLog(`Saved total ${count} new episodes`, 'saveNewReleases');
+	}
 }
 
 async function saveEpisodes(obj) {
@@ -175,10 +181,10 @@ async function saveEpisodes(obj) {
 			await series.save();
 			modified = true;
 		}
-		console.log('Modified: ' + modified.toString());
+		helper.saveLog(`Modified ${series.title}: ${modified.toString()}`, 'saveEpisodes');
 	} else {
 		await Series.create({ ...obj });
-		console.log('Created ' + title);
+		helper.saveLog('Created ' + title, 'saveEpisodes');
 	}
 }
 
@@ -210,7 +216,7 @@ async function getBrowse(query) {
 	return arr;
 }
 
-exports.getHome = getHome;
+exports.getNewReleases = getNewReleases;
 exports.getDetail = getDetail;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;

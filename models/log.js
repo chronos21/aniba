@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const failureSchema = new mongoose.Schema({
+const logSchema = new mongoose.Schema({
 	text: String,
 	source: String,
 	createdAt: {
@@ -9,6 +9,6 @@ const failureSchema = new mongoose.Schema({
 	}
 });
 
-const Failure = mongoose.model('Failure', failureSchema);
+const Log = mongoose.model('Log', logSchema);
 
-module.exports = Failure;
+module.exports = Log;

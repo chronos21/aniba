@@ -245,22 +245,24 @@ app.delete('/api/stats/:type', async (req, res) => {
 app.post('/api/auth/:type', async (req, res) => {
 	try {
 		let { type } = req.params;
-		let data;
+		let data, err;
 		if (type === 'register') {
 			data = await User.findOne({ username: req.body.username });
 			if (!data) {
 				data = await User.create({ ...req.body });
-				data.password = null;
 			} else {
+				err = 'Username is taken';
 				return res.status(404).json({ err });
 			}
 		} else if (type === 'login') {
-			data = await User.findOne({ ...req.body }, { password: 0 });
+			err = 'Username/password not right!';
+			data = await User.findOne({ ...req.body });
 		} else {
 			return res.status(404).json({ err });
 		}
 
 		if (data) {
+			data.password = null;
 			res.status(200).json({ data, type });
 		} else {
 			res.status(404).json({ err });

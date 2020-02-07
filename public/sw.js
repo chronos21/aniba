@@ -38,7 +38,7 @@ this.addEventListener('activate', function(event) {
 
 this.addEventListener('fetch', function(event) {
 	let url = event.request.url;
-	if (!url.includes('/video')) {
+	if (!url.includes('/video' && !url.includes('comments' && !url.includes('.js')))) {
 		event.respondWith(
 			caches.match(event.request).then(function(response) {
 				return response || fetch(event.request);

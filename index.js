@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const crawler = require('./handlers/crawler');
 const helper = require('./handlers/helper');
 const Comment = require('./models/comment');
+const User = require('./models/user');
 const Home = require('./models/home');
 const Episode = require('./models/episode');
 const Series = require('./models/series');
@@ -32,25 +33,12 @@ app.use(cors());
 
 app.use(express.json());
 
-app.get('/api/test/all', async (req, res) => {
-	let sort = { createdAt: -1 };
-	let { skip, limit, q } = req.query;
-	let search = null;
-	if (q) {
-		search = { title: new RegExp(q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi') };
-	}
-	if (!limit || isNaN(Number(limit))) limit = 99;
-	if (!skip || isNaN(Number(skip))) skip = 0;
-	let series = await Series.find(search).limit(Number(limit)).skip(Number(skip)).sort(sort);
-	return res.status(200).json({ series });
-});
-
 app.post('/api/comments/:parentId', async (req, res) => {
 	try {
 		let { text, authorId } = req.body;
 		let { parentId } = req.params;
-		if (!text || !parentId || !authorId) return res.status(400);
-		let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err));
+		if (!text || !parentId || !authorId) return res.status(404).json({ err });
+		let newComment = await Comment.create({ text, parentId, authorId });
 		res.json({ comment: newComment });
 	} catch (err) {
 		res.status(404).json({ err });
@@ -80,6 +68,7 @@ app.get('/api/stats/home/new', async (req, res) => {
 		helper.saveLog(err, req.url);
 	}
 });
+
 app.post('/api/stats/home/new', async (req, res) => {
 	try {
 		let { type, key } = req.body;
@@ -87,17 +76,6 @@ app.post('/api/stats/home/new', async (req, res) => {
 		if (type === 'browse' && !key) res.status(404).json({ err });
 		let data = await Home.create({ ...req.body });
 		res.json({ data });
-	} catch (err) {
-		res.status(404).json({ err });
-		helper.saveLog(err, req.url);
-	}
-});
-
-app.delete('/api/home/:title', async (req, res) => {
-	try {
-		let { title } = req.params;
-		let data = await Home.deleteOne({ title });
-		res.json(data);
 	} catch (err) {
 		res.status(404).json({ err });
 		helper.saveLog(err, req.url);
@@ -255,11 +233,38 @@ app.delete('/api/stats/:type', async (req, res) => {
 	try {
 		let { type } = req.params;
 		let schema = helper.findSchema(type);
-		// console.log(schema);
-		console.log(req.query);
 		if (!schema) return res.status(404).end();
 		let data = await schema.deleteOne({ ...req.query });
 		res.status(200).json({ data, type });
+	} catch (err) {
+		res.status(404).json({ err });
+		helper.saveLog(err, req.url);
+	}
+});
+
+app.post('/api/auth/:type', async (req, res) => {
+	try {
+		let { type } = req.params;
+		let data;
+		if (type === 'register') {
+			data = await User.findOne({ username: req.body.username });
+			if (!data) {
+				data = await User.create({ ...req.body });
+				data.password = null;
+			} else {
+				return res.status(404).json({ err });
+			}
+		} else if (type === 'login') {
+			data = await User.findOne({ ...req.body }, { password: 0 });
+		} else {
+			return res.status(404).json({ err });
+		}
+
+		if (data) {
+			res.status(200).json({ data, type });
+		} else {
+			res.status(404).json({ err });
+		}
 	} catch (err) {
 		res.status(404).json({ err });
 		helper.saveLog(err, req.url);

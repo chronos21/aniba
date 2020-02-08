@@ -2,7 +2,9 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const Series = require('../models/series');
 const Episode = require('../models/episode');
+const User = require('../models/user');
 const helper = require('./helper');
+const notification = require('./notification');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -137,7 +139,7 @@ async function saveSeries(arr) {
 
 async function saveNewReleases() {
 	let arr = await getNewReleases();
-
+	let userToNotify = await User.find({}, '_id');
 	let count = 0;
 	for (let item of arr) {
 		let parentId = item.Show.title;
@@ -156,6 +158,13 @@ async function saveNewReleases() {
 				releasedAt
 			}).catch((err) => helper.saveLog(err));
 			if (newEp) {
+				if (userToNotify && userToNotify.length > 0) {
+					console.log('Notifying Users');
+					userToNotify = userToNotify.map((item) => item._id);
+					let url = 'https://anibaniba.herokuapp.com/' + href;
+					notification.send({ content: title, headings: parentId }, url, userToNotify);
+				}
+
 				count += 1;
 			}
 		}

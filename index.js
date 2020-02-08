@@ -2,6 +2,7 @@ const express = require('express');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const crawler = require('./handlers/crawler');
+const notification = require('./handlers/notification');
 const helper = require('./handlers/helper');
 const Comment = require('./models/comment');
 const User = require('./models/user');
@@ -32,6 +33,11 @@ app.use(express.static('views'));
 app.use(cors());
 
 app.use(express.json());
+
+app.get('/api/notification/send', (req, res) => {
+	notification.send();
+	res.json({ msg: 'Hit' });
+});
 
 app.post('/api/comments/:parentId', async (req, res) => {
 	try {
@@ -302,5 +308,7 @@ app.get('/api/new-releases', async (req, res) => {
 app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+setInterval(() => axios.get('https://anibaniba.herokuapp.com/'), 300000);
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

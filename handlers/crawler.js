@@ -162,7 +162,7 @@ async function saveNewReleases() {
 				if (userToNotify && userToNotify.length > 0) {
 					console.log('Notifying Users');
 					let url = 'https://anibaniba.herokuapp.com/' + href;
-					notification.send({ content: title, headings: parentId }, url, userToNotify);
+					notification.send({ contents: title, headings: parentId }, url, userToNotify);
 				}
 
 				count += 1;

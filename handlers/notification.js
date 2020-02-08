@@ -9,7 +9,7 @@ function send(text, url, ids) {
 	var data = {
 		app_id: 'ed723a23-d589-408a-9560-52580ecdae9a',
 		contents: { en: text.contents },
-		headings: { en: text.headings},
+		headings: { en: text.headings },
 		url,
 		include_external_user_ids: ids
 	};
@@ -25,12 +25,12 @@ function send(text, url, ids) {
 	var https = require('https');
 	var req = https.request(options, function(res) {
 		res.on('data', function(data) {
-			helper.saveLog(data, 'notifSuccess');
+			helper.saveLog(JSON.parse(data), 'Notif Sent');
 		});
 	});
 
 	req.on('error', function(e) {
-		helper.saveLog(e, 'notifError');
+		helper.saveLog(e, 'Notif Error');
 	});
 
 	req.write(JSON.stringify(data));

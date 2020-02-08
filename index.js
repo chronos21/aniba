@@ -310,14 +310,7 @@ app.get('/*', (req, res) => {
 });
 
 setInterval(() => {
-	axios
-		.get('https://anibaniba.herokuapp.com/')
-		.then(() => {
-			helper.saveLog('Hitting our own server', 'index.js');
-		})
-		.catch((err) => {
-			helper.saveLog(err, 'Error hitting our own server');
-		});
+	axios.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true');
 }, 300000);
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

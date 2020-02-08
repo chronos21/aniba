@@ -140,6 +140,7 @@ async function saveSeries(arr) {
 async function saveNewReleases() {
 	let arr = await getNewReleases();
 	let userToNotify = await User.find({}, '_id');
+	userToNotify = userToNotify.map((item) => item._id);
 	let count = 0;
 	for (let item of arr) {
 		let parentId = item.Show.title;
@@ -160,7 +161,6 @@ async function saveNewReleases() {
 			if (newEp) {
 				if (userToNotify && userToNotify.length > 0) {
 					console.log('Notifying Users');
-					userToNotify = userToNotify.map((item) => item._id);
 					let url = 'https://anibaniba.herokuapp.com/' + href;
 					notification.send({ content: title, headings: parentId }, url, userToNotify);
 				}

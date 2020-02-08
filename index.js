@@ -309,6 +309,11 @@ app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-setInterval(() => axios.get('https://anibaniba.herokuapp.com/'), 300000);
+setInterval(() => {
+	axios.get('https://anibaniba.herokuapp.com/').catch((err) => {
+		helper.saveLog(err, 'Error hitting our own server');
+	});
+	helper.saveLog('Hitting our own server', 'index.js');
+}, 180000);
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

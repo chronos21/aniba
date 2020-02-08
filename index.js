@@ -296,21 +296,14 @@ app.get('/api/stats/:type', async (req, res) => {
 	}
 });
 
-app.get('/api/new-releases', async (req, res) => {
-	let sort = { createdAt: -1 };
-	let { skip, limit, q } = req.query;
-	if (!limit || isNaN(Number(limit))) limit = 99;
-	if (!skip || isNaN(Number(skip))) skip = 0;
-	let data = await Episode.find().limit(Number(limit)).skip(Number(skip)).sort(sort);
-	return res.status(200).json({ data });
-});
-
 app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 setInterval(() => {
-	axios.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true');
-}, 300000);
+	axios
+		.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true')
+		.catch((err) => helper.saveLog(err, 'Interval Wake Up'));
+}, 60000);
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

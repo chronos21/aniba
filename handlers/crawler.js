@@ -1,6 +1,10 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
 const Series = require('../models/series');
+const Episode = require('../models/episode');
+const User = require('../models/user');
+const helper = require('./helper');
+const notification = require('./notification');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -30,7 +34,7 @@ async function getSearch(q) {
 	return arr;
 }
 
-async function getHome() {
+async function getNewReleases() {
 	let res = await axios.post('https://www.animegg.org/index/recentReleases');
 	let arr = [];
 	if (res.data.recentReleases.length > 0) {
@@ -49,7 +53,7 @@ async function getDetail(url) {
 		embed: ''
 	};
 	if (!url.includes('-')) return obj;
-	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => console.log(err));
+	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => helper.saveLog(err));
 
 	if (res) {
 		let $ = cheerio.load(res.data);
@@ -82,7 +86,7 @@ async function getVideo(url) {
 }
 
 async function getSeries(url, doCrawl = false) {
-	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => console.log(err));
+	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => helper.saveLog(err));
 	let obj = {
 		title: '',
 		status: '',
@@ -115,19 +119,58 @@ async function getSeries(url, doCrawl = false) {
 async function saveSeries(arr) {
 	if (typeof arr === 'string') arr = await getSearch(arr);
 	if (arr.length > 0) {
-		let series = await Series.find().catch((err) => console.log(err));
+		let series = await Series.find().catch((err) => helper.saveLog(err));
 		let length = series.length;
 		series = series.map((item) => item.title);
-		// console.log(series);
+		// helper.saveLog(series);
 		for (let el of arr) {
 			if (!series.includes(el.title)) {
 				let newSeries = await Series.create({ ...el });
-				console.log(newSeries);
+				helper.saveLog(newSeries);
 			}
 		}
-		let newLength = await Series.find().catch((err) => console.log(err));
-		newLength = newLength.length;
-		console.log(length, newLength);
+		let newLength = await Series.countDocuments();
+		helper.saveLog(length, newLength);
+		if (newLength - length > 0) {
+			helper.saveLog(`Created ${newLength - length}} new series`, 'saveSeries');
+		}
+	}
+}
+
+async function saveNewReleases() {
+	let arr = await getNewReleases();
+	let userToNotify = await User.find({}, '_id');
+	userToNotify = userToNotify.map((item) => item._id);
+	let count = 0;
+	for (let item of arr) {
+		let parentId = item.Show.title;
+		let title = item.Episode.title;
+		let href = item.Episode.uri;
+		let releasedAt = item.createdAt;
+		let img = item.Show.thumbnailUrl;
+
+		let ep = await Episode.findOne({ parentId, title });
+		if (!ep) {
+			let newEp = await Episode.create({
+				parentId,
+				title,
+				href,
+				img,
+				releasedAt
+			}).catch((err) => helper.saveLog(err));
+			if (newEp) {
+				if (userToNotify && userToNotify.length > 0) {
+					console.log('Notifying Users');
+					let url = 'https://anibaniba.herokuapp.com/' + href;
+					notification.send({ contents: title, headings: parentId }, url, userToNotify);
+				}
+
+				count += 1;
+			}
+		}
+	}
+	if (count > 0) {
+		helper.saveLog(`Saved total ${count} new episodes`, 'saveNewReleases');
 	}
 }
 
@@ -147,16 +190,46 @@ async function saveEpisodes(obj) {
 			await series.save();
 			modified = true;
 		}
-		console.log('Modified: ' + modified.toString());
+		helper.saveLog(`Modified ${series.title}: ${modified.toString()}`, 'saveEpisodes');
 	} else {
 		await Series.create({ ...obj });
-		console.log('Created ' + title);
+		helper.saveLog('Created ' + title, 'saveEpisodes');
 	}
 }
 
-exports.getHome = getHome;
+async function getBrowse(query) {
+	let arr = [];
+
+	let { data } = await axios.get(`https://www.animegg.org/popular-series?${query}`);
+
+	if (data) {
+		let $ = cheerio.load(data);
+		$('#popularAnime .fea').each(function(index) {
+			let href = $(this).find('.rightpop > a').attr('href');
+			let title = $(this).find('.rightpop > a').text();
+			let episodes = '';
+			let status = '';
+			let img = $(this).find('img').attr('src');
+			$(this).find('.btn-sm.disabled').each(function(index) {
+				let text = $(this).text();
+				if (text.includes('Episodes')) {
+					episodes = text;
+				} else if (text.includes('Ongoing') || text.includes('Completed')) {
+					status = text;
+				}
+			});
+			arr.push({ title, episodes, status, href, img });
+		});
+	}
+
+	return arr;
+}
+
+exports.getNewReleases = getNewReleases;
 exports.getDetail = getDetail;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
 exports.saveSeries = saveSeries;
 exports.saveEpisodes = saveEpisodes;
+exports.saveNewReleases = saveNewReleases;
+exports.getBrowse = getBrowse;

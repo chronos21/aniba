@@ -7,7 +7,8 @@ const seriesSchema = new mongoose.Schema({
 	desc: String,
 	episodes: mongoose.Schema.Types.Mixed,
 	status: String,
-	href: String
+	href: String,
+	followedBy: Array
 });
 
 const Series = mongoose.model('Series', seriesSchema);

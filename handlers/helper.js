@@ -12,6 +12,14 @@ function saveLog(obj, source) {
 		.catch(() => console.log('Log not saved'));
 }
 
+function sanitizeUserId(userId) {
+	if (userId.includes('__')) {
+		return userId.split('__')[0]
+	} else {
+		return userId
+	}
+}
+
 function findSchema(type) {
 	let schema;
 	switch (type) {
@@ -39,3 +47,4 @@ function findSchema(type) {
 
 exports.saveLog = saveLog;
 exports.findSchema = findSchema;
+exports.sanitizeUserId = sanitizeUserId;

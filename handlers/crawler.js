@@ -11,14 +11,14 @@ async function getSearch(q) {
 	let arr = [];
 	if (res) {
 		let $ = cheerio.load(res.data);
-		$('.moose > .mse').each(function(index) {
+		$('.moose > .mse').each(function (index) {
 			let href = $(this).attr('href');
 			let title = $(this).find('h2').text();
 			let episodes = '';
 			let altTitles = '';
 			let status = '';
 			let img = $(this).find('img').attr('src');
-			$(this).find('.media-body .first div').each(function(index) {
+			$(this).find('.media-body .first div').each(function (index) {
 				let text = $(this).text();
 				if (text.includes('Episodes')) {
 					episodes = text;
@@ -60,7 +60,7 @@ async function getDetail(url) {
 		obj['embed'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
 		obj['video'] = await getVideo(obj['embed']);
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
-		$('.nap a').each(function(index) {
+		$('.nap a').each(function (index) {
 			if ($(this).attr('href') !== undefined && $(this).attr('href').includes('series')) {
 				obj['all'] = $(this).attr('href').replace('#episodes', '');
 				return false;
@@ -99,7 +99,7 @@ async function getSeries(url, doCrawl = false) {
 	if (res) {
 		let $ = cheerio.load(res.data);
 		let episodes = [];
-		$('.newmanga li div').each(function(index) {
+		$('.newmanga li div').each(function (index) {
 			let title = $(this).find('strong').text();
 			let subtitle = $(this).find('.anititle').text();
 			let href = $(this).find('a').attr('href');
@@ -139,8 +139,7 @@ async function saveSeries(arr) {
 
 async function saveNewReleases() {
 	let arr = await getNewReleases();
-	let userToNotify = await User.find({}, '_id');
-	userToNotify = userToNotify.map((item) => item._id);
+	let users = await User.find({ followedLength: { $gt: 0 } }, { followed: 1 });
 	let count = 0;
 	for (let item of arr) {
 		let parentId = item.Show.title;
@@ -159,6 +158,7 @@ async function saveNewReleases() {
 				releasedAt
 			}).catch((err) => helper.saveLog(err));
 			if (newEp) {
+				let userToNotify = users.filter(item => item.followed.includes(href)).map(user => user._id)
 				if (userToNotify && userToNotify.length > 0) {
 					console.log('Notifying Users');
 					let url = 'https://anibaniba.herokuapp.com/' + href;
@@ -204,13 +204,13 @@ async function getBrowse(query) {
 
 	if (data) {
 		let $ = cheerio.load(data);
-		$('#popularAnime .fea').each(function(index) {
+		$('#popularAnime .fea').each(function (index) {
 			let href = $(this).find('.rightpop > a').attr('href');
 			let title = $(this).find('.rightpop > a').text();
 			let episodes = '';
 			let status = '';
 			let img = $(this).find('img').attr('src');
-			$(this).find('.btn-sm.disabled').each(function(index) {
+			$(this).find('.btn-sm.disabled').each(function (index) {
 				let text = $(this).text();
 				if (text.includes('Episodes')) {
 					episodes = text;

@@ -176,12 +176,13 @@ async function saveNewReleases() {
 }
 
 async function saveEpisodes(obj) {
-	let { title, episodes, desc } = obj;
+	let { title, episodes, desc, status } = obj;
 	let series = await Series.findOne({ title: title });
 	if (series !== null) {
 		let modified = false;
 		if (series.episodes[0].subtitle !== episodes[0].subtitle) {
 			series.episodes = episodes;
+			series.status = status
 			series.markModified('episodes');
 			await series.save();
 			modified = true;

@@ -65,7 +65,7 @@ app.get('/api/comments/:parentId', async (req, res) => {
 
 app.get('/api/stats/home/new', async (req, res) => {
 	try {
-		let unFields = [ '__v', 'id', 'createdAt', '_id' ];
+		let unFields = ['__v', 'id', 'createdAt', '_id'];
 		let data = Object.keys(Home.schema.tree);
 		data = data.filter((item) => !unFields.includes(item));
 		res.json({ data });
@@ -296,9 +296,67 @@ app.get('/api/stats/:type', async (req, res) => {
 	}
 });
 
+app.get('/api/user/:userId/followed', async (req, res) => {
+	try {
+		let { userId } = req.params
+		userId = helper.sanitizeUserId(userId)
+		let data = []
+		let user = await User.findById(userId)
+		if (user) {
+			let followed = user.followed
+			if (followed.length > 0) {
+				followed = followed.map(item => '/series/' + item)
+				data = await Series.find({ "href": { $in: [...followed] } }, { title: 1, status: 1, href: 1, img: 1 })
+			}
+		}
+		res.json({ data })
+	} catch (err) {
+		res.status(404).json({ err });
+		helper.saveLog(err, req.url);
+	}
+})
+
+app.post('/api/user/:userId/followed/:seriesId', async (req, res) => {
+	try {
+		let { userId, seriesId } = req.params
+		userId = helper.sanitizeUserId(userId)
+		let data = await User.findById(userId, { followed: 1, followedLength: 1 })
+		let note = '';
+		if (data) {
+			let followed = data.followed
+			if (followed.includes(seriesId)) {
+				followed = followed.filter(item => item !== seriesId)
+				note = 'UNFOLLOWED'
+			} else {
+				followed.push(seriesId)
+				note = 'FOLLOWED'
+			}
+			data.followed = [...followed]
+			data.followedLength = data.followed.length
+			await data.save()
+		}
+		res.json({ data, note })
+		let series = await Series.findOne({ href: '/series/' + seriesId })
+		let followedBy = series.followedBy
+		if (note === 'UNFOLLOWED') {
+			followedBy = followedBy.filter(item => item != userId)
+		} else {
+			followedBy.push(userId)
+		}
+		series.followedBy = followedBy
+		series.save()
+
+	} catch (err) {
+		res.status(404).json({ err });
+		helper.saveLog(err, req.url);
+	}
+})
+
 app.get('/*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// crawler.saveNewReleases()
 
 setInterval(() => {
 	axios

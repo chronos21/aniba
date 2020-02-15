@@ -157,7 +157,6 @@ app.get('/api/video', async (req, res) => {
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
-		console.log(err);
 		helper.saveLog(err, req.url);
 		return res.status(404).end();
 	});
@@ -169,22 +168,21 @@ app.get('/api/video', async (req, res) => {
 		'Content-Type': 'video/mp4'
 	};
 
-	if (range) {
-		let parts = range.replace(/bytes=/, '').split('-');
-		let start = parseInt(parts[0], 10);
-		let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;
-		chunksize = end - start + 1;
-		console;
-		if (chunksize > 0) {
-			status = 206;
-			head = {
-				'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-				'Accept-Ranges': 'bytes',
-				'Content-Length': chunksize,
-				'Content-Type': 'video/mp4'
-			};
-		}
-	}
+	// if (range) {
+	// 	let parts = range.replace(/bytes=/, '').split('-');
+	// 	let start = parseInt(parts[0], 10);
+	// 	let end = parts[1] ? parseInt(parts[1], 10) : parseInt(fileSize) - 1;
+	// 	chunksize = end - start + 1;
+	// 	if (chunksize > 0) {
+	// 		status = 206;
+	// 		head = {
+	// 			'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+	// 			'Accept-Ranges': 'bytes',
+	// 			'Content-Length': chunksize,
+	// 			'Content-Type': 'video/mp4'
+	// 		};
+	// 	}
+	// }
 
 	res.writeHead(status, head);
 	data.pipe(res);

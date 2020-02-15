@@ -147,6 +147,7 @@ async function saveNewReleases() {
 		let href = item.Episode.uri;
 		let releasedAt = item.createdAt;
 		let img = item.Show.thumbnailUrl;
+		let parentHref = item.Show.uri
 
 		let ep = await Episode.findOne({ parentId, title });
 		if (!ep) {
@@ -158,7 +159,7 @@ async function saveNewReleases() {
 				releasedAt
 			}).catch((err) => helper.saveLog(err));
 			if (newEp) {
-				let userToNotify = users.filter(item => item.followed.includes(href)).map(user => user._id)
+				let userToNotify = users.filter(item => item.followed.includes(parentHref)).map(user => user._id)
 				if (userToNotify && userToNotify.length > 0) {
 					console.log('Notifying Users');
 					let url = 'https://anibaniba.herokuapp.com/' + href;

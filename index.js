@@ -145,12 +145,12 @@ app.get('/api/video', async (req, res) => {
 	let reqHeaders = {
 		Referer: embed
 	};
-	if (range) {
-		reqHeaders = {
-			Referer: embed,
-			Range: range
-		};
-	}
+	// if (range) {
+	// 	reqHeaders = {
+	// 		Referer: embed,
+	// 		Range: range
+	// 	};
+	// }
 
 	let { data, headers } = await axios({
 		url: url,

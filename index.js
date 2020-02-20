@@ -168,20 +168,14 @@ app.get('/api/video', async (req, res) => {
 		'Content-Type': 'video/mp4'
 	};
 
-	if (range) {
-		let parts = range.replace(/bytes=/, '').split('-');
-		let start = Number(parts[0]);
-		let end = parts[1] ? Number(parts[1]) : parseInt(fileSize) - 1;
-		chunksize = end - start + 1;
-		if (chunksize > 0) {
-			status = 206;
-			head = {
-				'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-				'Accept-Ranges': 'bytes',
-				'Content-Length': chunksize,
-				'Content-Type': 'video/mp4'
-			};
-		}
+	if (range && headers['content-range']) {
+		status = 206;
+		head = {
+			'Content-Range': headers['content-range'],
+			'Accept-Ranges': 'bytes',
+			'Content-Length': headers['content-length'],
+			'Content-Type': 'video/mp4'
+		};
 	}
 
 	res.writeHead(status, head);

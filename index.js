@@ -344,10 +344,6 @@ app.post('/api/user/:userId/followed/:seriesId', async (req, res) => {
 	}
 })
 
-app.get('/*', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 // crawler.saveNewReleases()
 
 setInterval(() => {

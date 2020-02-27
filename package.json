@@ -10,7 +10,8 @@
 		"ejs": "^3.0.1",
 		"express": "^4.17.1",
 		"moment": "^2.24.0",
-		"mongoose": "^5.8.9"
+		"mongoose": "^5.8.9",
+		"serverless-http": "^2.3.2"
 	},
 	"scripts": {
 		"start": "node index.js"

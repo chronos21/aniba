@@ -352,8 +352,9 @@ app.get('/*', (req, res) => {
 
 setInterval(() => {
 	axios
-		.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true')
+		.get('https://anibaniba.ga/api/home?type=new_releases&json=true')
 		.catch((err) => helper.saveLog(err, 'Interval Wake Up'));
 }, 60000);
 
-app.listen(PORT, () => console.log('Enjin Stato ' + PORT));
+module.exports = app;
+module.exports.handler = serverless(app);

@@ -350,10 +350,10 @@ app.get('/*', (req, res) => {
 
 // crawler.saveNewReleases()
 
-setInterval(() => {
-	axios
-		.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true')
-		.catch((err) => helper.saveLog(err, 'Interval Wake Up'));
-}, 60000);
+// setInterval(() => {
+// 	axios
+// 		.get('https://anibaniba.herokuapp.com/api/home?type=new_releases&json=true')
+// 		.catch((err) => helper.saveLog(err, 'Interval Wake Up'));
+// }, 60000);
 
 app.listen(PORT, () => console.log('Enjin Stato ' + PORT));

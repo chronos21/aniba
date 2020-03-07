@@ -54,10 +54,11 @@ async function getDetail(url) {
 	};
 	if (!url.includes('-')) return obj;
 	let res = await axios.get('https://www.animegg.org/' + url + '#subbed').catch((err) => helper.saveLog(err));
-
 	if (res) {
 		let $ = cheerio.load(res.data);
-		obj['embed'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
+		let vidSource = $('#subbed-Animegg iframe').attr('src');
+		if(!vidSource) vidSource = $('#dubbed-Animegg iframe').attr('src');
+		obj['embed'] = 'https://www.animegg.org' + vidSource
 		obj['video'] = await getVideo(obj['embed']);
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
 		$('.nap a').each(function (index) {

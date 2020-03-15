@@ -53,9 +53,14 @@ async function getDetail(url) {
 
 	if (res) {
 		let $ = cheerio.load(res.data);
-		obj['embed'] = 'https://www.animegg.org' + $('#subbed-Animegg iframe').attr('src');
+		let vidSource = $('#subbed-Animegg iframe').attr('src');
+		if(!vidSource) vidSource = $('#dubbed-Animegg iframe').attr('src');
+		obj['embed'] = 'https://www.animegg.org' + vidSource
 		obj['video'] = await getVideo(obj['embed']);
 		obj['title'] = $('.titleep a').text() + ' ' + $('.e4tit').text();
+		if(!obj['title'].includes('sode')){
+			obj['title'] = $('.info strong').text();
+		}
 		$('.nap a').each(function(index) {
 			if ($(this).attr('href') !== undefined && $(this).attr('href').includes('series')) {
 				obj['all'] = $(this).attr('href').replace('#episodes', '');

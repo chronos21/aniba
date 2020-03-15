@@ -1,7 +1,7 @@
 const express = require('express');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const crawler = require('./controllers/crawler');
+const crawler = require('./handlers/crawler');
 const Comment = require('./models/comment');
 const Series = require('./models/series');
 const axios = require('axios');
@@ -19,7 +19,6 @@ mongoose
 	})
 	.then(() => {
 		console.log('Mongo status green');
-		// doCrawl();
 	}).catch(err => console.log(err));
 
 app.locals.moment = moment;
@@ -28,22 +27,6 @@ app.use(express.static('public'));
 app.use(express.static('views'));
 
 app.use(express.json());
-
-// async function doCrawl() {
-// 	let q = key[pointer1] + key[pointer2];
-// 	await crawler.saveSeries(q);
-// 	if (q == 'zz') {
-// 		return;
-// 	} else {
-// 		if (pointer2 === key.length - 1) {
-// 			pointer1 += 1;
-// 			pointer2 = 0;
-// 		} else {
-// 			pointer2 += 1;
-// 		}
-// 		return doCrawl();
-// 	}
-// }
 
 app.get('/test/all', async (req, res) => {
 	let sort = { createdAt: -1 };
@@ -95,16 +78,17 @@ app.get('/search', async (req, res) => {
 });
 
 app.get('/video', async (req, res) => {
-	let { url, embed } = req.query;
-	let range = req.headers['range']
+	let { url, embed, download, title } = req.query;
+	let range = req.headers['range'];
+
 	let reqHeaders = {
-		Referer: embed,
-	}
-	if(range){
+		Referer: embed
+	};
+	if (range) {
 		reqHeaders = {
 			Referer: embed,
-        	Range: range
-		}
+			Range: range
+		};
 	}
 
 	let { data, headers } = await axios({
@@ -112,42 +96,45 @@ app.get('/video', async (req, res) => {
 		headers: reqHeaders,
 		responseType: 'stream'
 	}).catch((err) => {
-		console.log(err);
-		return res.status(404);
+		return res.status(404).end();
 	});
 
-	let fileSize = headers['content-length']
+	let fileSize = headers['content-length'];
+	let status = 200;
+	let head = {
+		'Content-Length': fileSize,
+		'Content-Type': 'video/mp4'
+	};
 
-	if (range) {
-		let parts = range.replace(/bytes=/, "").split("-")
-		let start = parseInt(parts[0], 10)
-		let end = parts[1]
-		  ? parseInt(parts[1], 10)
-		  : fileSize-1
-		let chunksize = (end-start)+1
-		let head = {
-		  'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-		  'Accept-Ranges': 'bytes',
-		  'Content-Length': chunksize,
-		  'Content-Type': 'video/mp4',
-		}
-		res.writeHead(206, head);
-		data.pipe(res);
-	} else {
-		let head = {
+	if (range && headers['content-range']) {
+		status = 206;
+		head = {
+			'Content-Range': headers['content-range'],
+			'Accept-Ranges': 'bytes',
 			'Content-Length': headers['content-length'],
 			'Content-Type': 'video/mp4'
 		};
-		res.writeHead(200, head);
-		data.pipe(res);
 	}
+
+	res.status(status)
+    res.set(head)
+
+    if(download){
+    	res.attachment(title)
+    }
+	data.pipe(res);
 });
 
 app.get('/:id', async (req, res) => {
 	try{
 		let url = req.params.id;
 		let data = await crawler.getDetail(url);
-		res.render('detail', { data, tab: 'home', title: `Watch ${data.title} for free`, url });
+		let download = req.query.download
+		if(download){
+			res.redirect(`/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)
+		} else {
+			res.render('detail', { data, tab: 'detail', title: `Watch ${data.title} for free`, url });
+		}
 	} catch(err){
 		console.log(err)
 	}

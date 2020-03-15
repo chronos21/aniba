@@ -21,7 +21,12 @@
         <% data.episodes.forEach(function(item){ %>
         <div class="item">
             <div class="content">
-                <a class="header" href="<%= item.href %>">
+                <a class="mini ui icon button" 
+                    target="_blank" href="<%= item.href %>?download=true"   
+                    style="float: right;">
+                    <i class="download icon"></i>
+                </a>
+                <a class="header" href="<%= item.href %>" target="_blank">
                     <%= item.subtitle %>
                 </a>
                 <div class="description"><%= item.title %></div>

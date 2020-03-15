@@ -16,6 +16,7 @@
 </head>
 
 <body>
+    <% if(tab === 'home') {%>
     <div class="ui container small secondary menu" style="padding-top: 10px;">
         <a class="item <%= tab === 'home' && 'active'%>" href="/">
             Home
@@ -32,3 +33,4 @@
             </div>
         </div>
     </div>
+    <% } %>

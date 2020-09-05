@@ -5,6 +5,7 @@ const crawler = require('./handlers/crawler');
 const Comment = require('./models/comment');
 const Series = require('./models/series');
 const axios = require('axios');
+const fs = require('fs')
 // let key = 'abcdefghijklmnopqrstuvwxyz';
 // let pointer1 = 0;
 // let pointer2 = 0;
@@ -137,32 +138,48 @@ app.get('/:id', async (req, res) => {
 		}
 	} catch(err){
 		console.log(err)
+		res.end()
 	}
 
 });
 
 app.get('/series/:id', async (req, res) => {
 	try{
+
 		let id = req.params.id;
-		let data = await Series.findOne({ href: '/series/' + id });
-		// console.log(data);
-		if (data == null || !Array.isArray(data.episodes)) {
-			data = await crawler.getSeries(id);
-			crawler.saveEpisodes(data);
+		let data = await crawler.getSeries(id);
+		// // console.log(data);
+		// if (data == null || !Array.isArray(data.episodes)) {
+		// 	data = await crawler.getSeries(id);
+		// 	crawler.saveEpisodes(data);
+		// } else {
+		// 	setTimeout(async () => {
+		// 		let newData = await crawler.getSeries(id);
+		// 		crawler.saveEpisodes(newData);
+		// 	}, 4000);
+		// 	// console.log(data);
+		// }
+		if(req.query.batch){
+			let ep = [...data.episodes]
+			ep.reverse()
+			let string = ''
+			for(let item of ep){
+				string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + '\r\n')
+			}
+			let dir = './public/' + id + '.txt'
+			fs.writeFileSync(dir, string)
+			res.download(dir)
 		} else {
-			setTimeout(async () => {
-				let newData = await crawler.getSeries(id);
-				crawler.saveEpisodes(newData);
-			}, 4000);
-			// console.log(data);
+			res.render('series', {
+				data,
+				tab: 'home',
+				title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
+			});
 		}
-		res.render('series', {
-			data,
-			tab: 'home',
-			title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
-		});
+
 	} catch(err){
 		console.log(err)
+		res.end()
 	}
 
 

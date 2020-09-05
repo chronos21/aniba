@@ -17,12 +17,17 @@
         </div>
     </div>
 
+    <div style="margin: 10px 0">
+        <a target="_blank" href="?batch=true" class="fluid ui primary button">Batch Links</a>
+    </div>
+
+
     <div class="ui relaxed selection list" style="margin-bottom: 30px;">
         <% data.episodes.forEach(function(item){ %>
         <div class="item">
             <div class="content">
-                <a class="mini ui icon button" 
-                    target="_blank" href="<%= item.href %>?download=true"   
+                <a class="mini ui icon button"
+                    target="_blank" href="<%= item.href %>?download=true"
                     style="float: right;">
                     <i class="download icon"></i>
                 </a>

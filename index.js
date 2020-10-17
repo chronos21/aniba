@@ -13,7 +13,6 @@ const fs = require('fs')
 const app = express();
 const PORT = process.env.PORT || 8080;
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 mongoose
 	.connect('mongodb://cahya:isra12@ds213529.mlab.com:13529/aniba', {
@@ -142,12 +141,9 @@ app.get('/video', async (req, res) => {
 app.get('/:id', async (req, res) => {
 	try{
         let url = req.params.id;
-        let data = {}
-        if(req.query.retry){
-            data = await crawler.getAnimerushDetail(url)
-            
-        } else {
-            data = await crawler.getDetail(url);
+        let data = await crawler.getDetail(url);
+        if(data.video.includes('undefined')){
+            data = await crawler.getAnimerushDetail(url)   
         }
 		let download = req.query.download
 		if(download){

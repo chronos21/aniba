@@ -83,11 +83,11 @@ app.get('/search', async (req, res) => {
 });
 
 app.get('/video', async (req, res) => {
-    try {
+    try{
 
         let { url, embed, download, title } = req.query;
         let range = req.headers['range'];
-
+    
         let reqHeaders = {
             Referer: embed
         };
@@ -97,26 +97,25 @@ app.get('/video', async (req, res) => {
                 Range: range
             };
         }
-
+    
         let stream = await axios({
             url: url,
             headers: reqHeaders,
             responseType: 'stream'
         }).catch((err) => {
-            console.log(err)
-            return res.status(404).end();
+            console.log(err.message)
         });
 
-        let headers = stream.headers
         let data = stream.data
-
+        let headers = stream.headers
+    
         let fileSize = headers['content-length'];
         let status = 200;
         let head = {
             'Content-Length': fileSize,
             'Content-Type': 'video/mp4'
         };
-
+    
         if (range && headers['content-range']) {
             status = 206;
             head = {
@@ -126,27 +125,29 @@ app.get('/video', async (req, res) => {
                 'Content-Type': 'video/mp4'
             };
         }
-
-
+    
         res.status(status)
         res.set(head)
-
-        if (download) {
+    
+        if(download){
             res.attachment(title)
         }
         data.pipe(res);
-    } catch (err) {
-        console.log(err)
-        res.end()
+    } catch(err){
+        console.log(err.message)
+		res.end()
     }
 });
 
 app.get('/:id', async (req, res) => {
 	try{
         let url = req.params.id;
-        let data = await crawler.getDetail(url);
-        if(data.video.includes('undefined')){
+        let data = {}
+        if(req.query.retry){
             data = await crawler.getAnimerushDetail(url)
+            
+        } else {
+            data = await crawler.getDetail(url);
         }
 		let download = req.query.download
 		if(download){

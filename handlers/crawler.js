@@ -31,12 +31,19 @@ async function getSearch(q) {
 }
 
 async function getHome() {
-	let res = await axios.post('https://www.animegg.org/index/recentReleases');
-	let arr = [];
-	if (res.data.recentReleases.length > 0) {
-		arr = res.data.recentReleases;
-	}
-	return arr;
+    let {data} = await axios.get('https://www.animerush.tv')
+    let $ = cheerio.load(data)
+    let arr = []
+    $('#episodes .episode').each(function(index){
+        let obj = {
+            href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
+			title: $(this).find('h3').text(),
+			time: $(this).find('.episode-meta').text(),
+			img: $(this).find('img').attr('src').replace('//www.animerush.tv/', ''),
+        }
+        arr.push(obj)
+    })
+    return arr
 }
 
 async function getAnimerushVideo(embedUrl) {

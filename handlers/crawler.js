@@ -39,6 +39,40 @@ async function getHome() {
 	return arr;
 }
 
+async function getAnimerushVideo(embedUrl) {
+    let { data } = await axios.get(embedUrl)
+    let $ = cheerio.load(data)
+    let url = ''
+    $('script').each(function (index) {
+        let s = $(this).html()
+        if (s.includes('eval')) {
+            s = s.split('|player')[1].split('|')
+            let http = s[4]
+            let www = s[19]
+            let filename = s[70]
+            let src = s[71]
+            let port = s[72]
+            let ext = s[69]
+            url = `${http}://${www}.mp4upload.com:${port}/d/${src}/${filename}.${ext}`
+            return false
+        }
+    })
+    return url
+}
+
+async function getAnimerushDetail(url) {
+	let {data} = await axios.get('https://www.animerush.tv/' + url)
+    let $ = cheerio.load(data)
+    let obj = {
+        embed: 'https://www.mp4upload.com',
+        videoUrl: $('.player-area iframe').attr('src'),
+        title: $('.bannertit').text()
+    }
+    obj.video = await getAnimerushVideo(obj.videoUrl)
+ 
+    return obj
+}
+
 async function getDetail(url) {
 	let obj = {
 		video: '',
@@ -82,7 +116,6 @@ async function getVideo(url) {
 		let $ = cheerio.load(data);
 		videoLink = 'https://www.animegg.org' + $('[property="og:video"]').attr('content');
 	}
-
 	return videoLink;
 }
 
@@ -161,6 +194,8 @@ async function saveEpisodes(obj) {
 
 exports.getHome = getHome;
 exports.getDetail = getDetail;
+exports.getAnimerushDetail = getAnimerushDetail;
+exports.getAnimerushVideo = getAnimerushVideo;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
 exports.saveSeries = saveSeries;

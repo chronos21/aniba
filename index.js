@@ -12,6 +12,8 @@ const fs = require('fs')
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 mongoose
 	.connect('mongodb://cahya:isra12@ds213529.mlab.com:13529/aniba', {
@@ -79,57 +81,72 @@ app.get('/search', async (req, res) => {
 });
 
 app.get('/video', async (req, res) => {
-	let { url, embed, download, title } = req.query;
-	let range = req.headers['range'];
+    try{
 
-	let reqHeaders = {
-		Referer: embed
-	};
-	if (range) {
-		reqHeaders = {
-			Referer: embed,
-			Range: range
-		};
-	}
+        let { url, embed, download, title } = req.query;
+        let range = req.headers['range'];
+    
+        let reqHeaders = {
+            Referer: embed
+        };
+        if (range) {
+            reqHeaders = {
+                Referer: embed,
+                Range: range
+            };
+        }
+    
+        let stream = await axios({
+            url: url,
+            headers: reqHeaders,
+            responseType: 'stream'
+        }).catch((err) => {
+            console.log(err.message)
+        });
 
-	let { data, headers } = await axios({
-		url: url,
-		headers: reqHeaders,
-		responseType: 'stream'
-	}).catch((err) => {
-		return res.status(404).end();
-	});
-
-	let fileSize = headers['content-length'];
-	let status = 200;
-	let head = {
-		'Content-Length': fileSize,
-		'Content-Type': 'video/mp4'
-	};
-
-	if (range && headers['content-range']) {
-		status = 206;
-		head = {
-			'Content-Range': headers['content-range'],
-			'Accept-Ranges': 'bytes',
-			'Content-Length': headers['content-length'],
-			'Content-Type': 'video/mp4'
-		};
-	}
-
-	res.status(status)
-    res.set(head)
-
-    if(download){
-    	res.attachment(title)
+        let data = stream.data
+        let headers = stream.headers
+    
+        let fileSize = headers['content-length'];
+        let status = 200;
+        let head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4'
+        };
+    
+        if (range && headers['content-range']) {
+            status = 206;
+            head = {
+                'Content-Range': headers['content-range'],
+                'Accept-Ranges': 'bytes',
+                'Content-Length': headers['content-length'],
+                'Content-Type': 'video/mp4'
+            };
+        }
+    
+        res.status(status)
+        res.set(head)
+    
+        if(download){
+            res.attachment(title)
+        }
+        data.pipe(res);
+    } catch(err){
+        console.log(err.message)
+		res.end()
     }
-	data.pipe(res);
 });
 
 app.get('/:id', async (req, res) => {
 	try{
-		let url = req.params.id;
-		let data = await crawler.getDetail(url);
+        let url = req.params.id;
+        let data = {}
+        if(req.query.retry){
+            data = await crawler.getAnimerushDetail(url)
+            
+        } else {
+            data = await crawler.getDetail(url);
+        }
 		let download = req.query.download
 		if(download){
 			res.redirect(`/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)

@@ -1,3 +1,14 @@
 <%- include('./header') %>
 <video src="/video?url=<%= data.video %>&embed=<%= data.embed %>" autoplay width="100%" style="background: black; max-height: 100vh; outline: none" controls></video>
+<script>
+    document.querySelector('video').addEventListener('error', handleVideoError)
+
+    function handleVideoError(){
+        let l = window.location.href
+        if(!l.includes('retry')){
+            window.location.href = window.location.href + '?retry=true'
+        }
+    }
+</script>
+
 <%- include('./footer') %>

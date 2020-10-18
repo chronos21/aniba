@@ -73,7 +73,7 @@ async function getAnimerushDetail(url) {
     let obj = {
         embed: 'https://www.mp4upload.com',
         videoUrl: $('.player-area iframe').attr('src'),
-        title: $('.bannertit').text()
+        title: $('.bannertit h1').text()
     }
     obj.video = await getAnimerushVideo(obj.videoUrl)
  

@@ -142,7 +142,7 @@ app.get('/:id', async (req, res) => {
 	try{
         let url = req.params.id;
         let data = await crawler.getDetail(url);
-        if(data.video.includes('undefined')){
+        if(!data.video || data.video.includes('undefined')){
             data = await crawler.getAnimerushDetail(url)   
         }
 		let download = req.query.download

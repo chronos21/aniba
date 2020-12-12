@@ -39,7 +39,7 @@ async function getHome() {
             href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
 			title: $(this).find('h3').text(),
 			time: $(this).find('.episode-meta').text(),
-			img: $(this).find('img').attr('src').replace('//www.animerush.tv/', ''),
+			img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
         }
         arr.push(obj)
     })
@@ -73,7 +73,10 @@ async function getAnimerushDetail(url) {
     let obj = {
         embed: 'https://www.mp4upload.com',
         videoUrl: $('.player-area iframe').attr('src'),
-        title: $('.bannertit h1').text()
+        title: $('.bannertit h1').text(),
+        prev: $('.ep-prev a').attr('href').replace('//www.animerush.tv', ''),
+		all: $('.ep-more a').attr('href').replace('//www.animerush.tv/anime/', '/series/'),
+		next: $('.ep-next a').attr('href').replace('//www.animerush.tv', ''),
     }
     obj.video = await getAnimerushVideo(obj.videoUrl)
  

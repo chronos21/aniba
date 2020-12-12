@@ -6,9 +6,7 @@ const Comment = require('./models/comment');
 const Series = require('./models/series');
 const axios = require('axios');
 const fs = require('fs')
-// let key = 'abcdefghijklmnopqrstuvwxyz';
-// let pointer1 = 0;
-// let pointer2 = 0;
+const cors = require('cors')
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -25,6 +23,7 @@ mongoose
 
 app.locals.moment = moment;
 app.set('view engine', 'ejs');
+app.use(cors())
 app.use(express.static('public'));
 app.use(express.static('views'));
 
@@ -58,22 +57,50 @@ app.get('/api/comments/:parentId', async (req, res) => {
 	return res.json({ comments });
 });
 
-app.get('/', async (req, res) => {
+app.get('/api/home', async (req, res) => {
 	try{
 		let data = await crawler.getHome();
-		res.render('home', { data, tab: 'home', title: 'aniba' });
+		res.json({ data, tab: 'home', title: 'aniba' });
 	} catch(err){
         console.log(err)
         res.end()
 	}
 });
 
-app.get('/search', async (req, res) => {
+app.get('/api/images', async (req, res) => {
+	try {
+        let url = req.query.url
+        if(req.query.from !== 'vidcache'){
+            url = 'https://www.animerush.tv/anime-images-big/' + req.query.url
+        } 
+        let stream = await axios({
+            url: url,
+            responseType: 'stream'
+        }).catch((err) => {
+            console.log(err.message)
+        });
+
+        let data = stream.data
+        let headers = stream.headers
+        let status = 200;
+        head = {
+            'Content-Length': headers['content-length'],
+            'Content-Type': headers['content-type'],
+            'Cache-Control': 'public, max-age=604800, immutable'
+        };
+        res.status(status)
+        res.set(head)
+        data.pipe(res);
+    } catch (err) {
+        
+    }
+});
+
+app.get('/api/search', async (req, res) => {
 	try{
 		let { q } = req.query;
 		let data = await crawler.getSearch(q);
-		res.render('search', { data, q, tab: 'home', title: `results for: "${q}"` });
-		crawler.saveSeries(data);
+		res.json({ data, q, tab: 'home', title: `results for: "${q}"`});
 	} catch(err){
         console.log(err)
         res.end()
@@ -81,9 +108,8 @@ app.get('/search', async (req, res) => {
 
 });
 
-app.get('/video', async (req, res) => {
+app.get('/api/video', async (req, res) => {
     try{
-
         let { url, embed, download, title } = req.query;
         let range = req.headers['range'];
     
@@ -138,7 +164,7 @@ app.get('/video', async (req, res) => {
     }
 });
 
-app.get('/:id', async (req, res) => {
+app.get('/api/episodes/:id', async (req, res) => {
 	try{
         let url = req.params.id;
         let data = await crawler.getDetail(url);
@@ -147,9 +173,9 @@ app.get('/:id', async (req, res) => {
         }
 		let download = req.query.download
 		if(download){
-			res.redirect(`/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)
+			res.redirect(`/api/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)
 		} else {
-			res.render('detail', { data, tab: 'detail', title: `Watch ${data.title} for free`, url });
+			res.json({ data, tab: 'detail', title: `Watch ${data.title} for free`, url });
 		}
 	} catch(err){
 		console.log(err)
@@ -158,22 +184,11 @@ app.get('/:id', async (req, res) => {
 
 });
 
-app.get('/series/:id', async (req, res) => {
+app.get('/api/series/:id', async (req, res) => {
 	try{
 
 		let id = req.params.id;
 		let data = await crawler.getSeries(id);
-		// // console.log(data);
-		// if (data == null || !Array.isArray(data.episodes)) {
-		// 	data = await crawler.getSeries(id);
-		// 	crawler.saveEpisodes(data);
-		// } else {
-		// 	setTimeout(async () => {
-		// 		let newData = await crawler.getSeries(id);
-		// 		crawler.saveEpisodes(newData);
-		// 	}, 4000);
-		// 	// console.log(data);
-		// }
 		if(req.query.batch){
 			let ep = [...data.episodes]
 			ep.reverse()
@@ -185,7 +200,7 @@ app.get('/series/:id', async (req, res) => {
 			fs.writeFileSync(dir, string)
 			res.download(dir)
 		} else {
-			res.render('series', {
+			res.json({
 				data,
 				tab: 'home',
 				title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`

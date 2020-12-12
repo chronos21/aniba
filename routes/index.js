@@ -1,0 +1,196 @@
+const express = require('express')
+const router = express.Router()
+const crawler = require('../handlers/crawler');
+const Comment = require('../models/comment');
+const axios = require('axios');
+const fs = require('fs')
+
+router.route('/comments/:parentId')
+    .post(postComment)
+    .get(getComments)
+
+router.get('/home', getHome)
+router.get('/images', getImage)
+router.get('/search', getSearch)
+router.get('/video', getVideo)
+router.get('/episodes/:id', getEpisode)
+router.get('/series/:id', getSeries)
+
+async function postComment(req, res) {
+    try {
+        let { text, authorId } = req.body;
+        let { parentId } = req.params;
+        if (!text || !parentId || !authorId) return res.status(400);
+        let newComment = await Comment.create({ text, parentId, authorId }).catch((err) => console.log(err.message));
+        return res.json({ comment: newComment });
+    } catch (err) {
+        res.end()
+    }
+}
+
+async function getComments(req, res) {
+    try {
+        let { parentId } = req.params;
+        let comments = await Comment.find({ parentId });
+        return res.json({ comments });
+    } catch (err) {
+        res.end()
+    }
+}
+
+async function getHome(req, res) {
+    try {
+        let data = await crawler.getHome();
+        res.json({ data, tab: 'home', title: 'aniba' });
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+async function getImage(req, res) {
+    try {
+        let url = req.query.url
+        if (req.query.from !== 'vidcache') {
+            url = 'https://www.animerush.tv/anime-images-big/' + req.query.url
+        }
+        let stream = await axios({
+            url: url,
+            responseType: 'stream'
+        }).catch((err) => {
+            console.log(err.message)
+        });
+
+        let data = stream.data
+        let headers = stream.headers
+        let status = 200;
+        head = {
+            'Content-Length': headers['content-length'],
+            'Content-Type': headers['content-type'],
+            'Cache-Control': 'public, max-age=604800, immutable'
+        };
+        res.status(status)
+        res.set(head)
+        data.pipe(res);
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+async function getSearch(req, res) {
+    try {
+        let { q } = req.query;
+        let data = await crawler.getSearch(q);
+        res.json({ data, q, tab: 'home', title: `results for: "${q}"` });
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+async function getVideo(req, res) {
+    try {
+        let { url, embed, download, title } = req.query;
+        let range = req.headers['range'];
+
+        let reqHeaders = {
+            Referer: embed
+        };
+        if (range) {
+            reqHeaders = {
+                Referer: embed,
+                Range: range
+            };
+        }
+
+        let stream = await axios({
+            url: url,
+            headers: reqHeaders,
+            responseType: 'stream'
+        }).catch((err) => {
+            console.log(err.message)
+        });
+
+        let data = stream.data
+        let headers = stream.headers
+
+        let fileSize = headers['content-length'];
+        let status = 200;
+        let head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4'
+        };
+
+        if (range && headers['content-range']) {
+            status = 206;
+            head = {
+                'Content-Range': headers['content-range'],
+                'Accept-Ranges': 'bytes',
+                'Content-Length': headers['content-length'],
+                'Content-Type': 'video/mp4'
+            };
+        }
+
+        res.status(status)
+        res.set(head)
+
+        if (download) {
+            res.attachment(title)
+        }
+        data.pipe(res);
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+async function getEpisode(req, res) {
+    try {
+        let url = req.params.id;
+        let data = await crawler.getDetail(url);
+        if (!data.video || data.video.includes('undefined')) {
+            data = await crawler.getAnimerushDetail(url)
+        }
+        let download = req.query.download
+        if (download) {
+            res.redirect(`/api/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)
+        } else {
+            res.json({ data, tab: 'detail', title: `Watch ${data.title} for free`, url });
+        }
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+async function getSeries(req, res) {
+    try {
+
+        let id = req.params.id;
+        let data = await crawler.getSeries(id);
+        if (req.query.batch) {
+            let ep = [...data.episodes]
+            ep.reverse()
+            let string = ''
+            for (let item of ep) {
+                string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + '\r\n')
+            }
+            let dir = './public/' + id + '.txt'
+            fs.writeFileSync(dir, string)
+            res.download(dir)
+        } else {
+            res.json({
+                data,
+                tab: 'home',
+                title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
+            });
+        }
+
+    } catch (err) {
+        console.log(err.message)
+        res.end()
+    }
+}
+
+module.exports = router

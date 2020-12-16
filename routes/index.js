@@ -10,9 +10,9 @@ router.route('/comments/:parentId')
     .get(getComments)
 
 router.get('/home', getHome)
-router.get('/images', getImage)
+router.get('/images', streamImage)
 router.get('/search', getSearch)
-router.get('/video', getVideo)
+router.get('/video', streamVideo)
 router.get('/episodes/:id', getEpisode)
 router.get('/series/:id', getSeries)
 
@@ -48,7 +48,7 @@ async function getHome(req, res) {
     }
 }
 
-async function getImage(req, res) {
+async function streamImage(req, res) {
     try {
         let url = req.query.url
         if (req.query.from !== 'vidcache') {
@@ -89,7 +89,7 @@ async function getSearch(req, res) {
     }
 }
 
-async function getVideo(req, res) {
+async function streamVideo(req, res) {
     try {
         let { url, embed, download, title } = req.query;
         let range = req.headers['range'];
@@ -148,15 +148,16 @@ async function getVideo(req, res) {
 async function getEpisode(req, res) {
     try {
         let url = req.params.id;
-        let data = await crawler.getDetail(url);
+        let hd = req.query.hd
+        let data = await crawler.getDetails(url, hd);
         if (!data.video || data.video.includes('undefined')) {
-            data = await crawler.getAnimerushDetail(url)
+            data = await crawler.getAnimerushDetails(url, hd)
         }
         let download = req.query.download
         if (download) {
             res.redirect(`/api/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)
         } else {
-            res.json({ data, tab: 'detail', title: `Watch ${data.title} for free`, url });
+            res.json({ data });
         }
     } catch (err) {
         console.log(err.message)
@@ -180,11 +181,7 @@ async function getSeries(req, res) {
             fs.writeFileSync(dir, string)
             res.download(dir)
         } else {
-            res.json({
-                data,
-                tab: 'home',
-                title: `aniba - ${data.title} | Watch all episodes of ${data.title} for`
-            });
+            res.json({ data });
         }
 
     } catch (err) {

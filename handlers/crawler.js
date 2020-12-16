@@ -1,6 +1,5 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
-const Series = require('../models/series');
 
 async function getSearch(q) {
 	let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -129,7 +128,7 @@ async function getVideo(url) {
 	return videoLink;
 }
 
-async function getSeries(url, doCrawl = false) {
+async function getSeries(url) {
 	let res = await axios.get('https://www.animegg.org/series/' + url).catch((err) => console.log(err));
 	let obj = {
 		title: '',
@@ -160,53 +159,9 @@ async function getSeries(url, doCrawl = false) {
 	return obj;
 }
 
-async function saveSeries(arr) {
-	if (typeof arr === 'string') arr = await getSearch(arr);
-	if (arr.length > 0) {
-		let series = await Series.find().catch((err) => console.log(err));
-		let length = series.length;
-		series = series.map((item) => item.title);
-		// console.log(series);
-		for (let el of arr) {
-			if (!series.includes(el.title)) {
-				let newSeries = await Series.create({ ...el });
-				console.log(newSeries);
-			}
-		}
-		let newLength = await Series.find().catch((err) => console.log(err));
-		newLength = newLength.length;
-		console.log(length, newLength);
-	}
-}
-
-async function saveEpisodes(obj) {
-	let { title, episodes, desc } = obj;
-	let series = await Series.findOne({ title: title });
-	if (series !== null) {
-		let modified = false;
-		if (series.episodes[0].subtitle !== episodes[0].subtitle) {
-			series.episodes = episodes;
-			series.markModified('episodes');
-			await series.save();
-			modified = true;
-		}
-		if (series.desc !== desc) {
-			series.desc = desc;
-			await series.save();
-			modified = true;
-		}
-		console.log('Modified: ' + modified.toString());
-	} else {
-		await Series.create({ ...obj });
-		console.log('Created ' + title);
-	}
-}
-
 exports.getHome = getHome;
 exports.getDetail = getDetail;
 exports.getAnimerushDetail = getAnimerushDetail;
 exports.getAnimerushVideo = getAnimerushVideo;
 exports.getSearch = getSearch;
 exports.getSeries = getSeries;
-exports.saveSeries = saveSeries;
-exports.saveEpisodes = saveEpisodes;

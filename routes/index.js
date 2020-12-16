@@ -152,6 +152,10 @@ async function getEpisode(req, res) {
         let data = await crawler.getDetails(url, hd);
         if (!data.video || data.video.includes('undefined')) {
             data = await crawler.getAnimerushDetails(url, hd)
+            if(hd && (!data.video || data.video.includes('undefined'))){
+                data = await crawler.getAnimerushDetails(url)
+                data.quality = 'FALLBACK_SD'
+            }
         }
         let download = req.query.download
         if (download) {
@@ -170,12 +174,13 @@ async function getSeries(req, res) {
 
         let id = req.params.id;
         let data = await crawler.getSeries(id);
+        let hd = req.query.hd
         if (req.query.batch) {
             let ep = [...data.episodes]
             ep.reverse()
             let string = ''
             for (let item of ep) {
-                string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + '\r\n')
+                string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + (hd ? '&hd=true' : '')+ '\r\n')
             }
             let dir = './public/' + id + '.txt'
             fs.writeFileSync(dir, string)

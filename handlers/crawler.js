@@ -84,7 +84,7 @@ async function getAnimerushDetails(url, hd) {
     let obj = {
         embed: 'https://www.mp4upload.com',
         videoUrl: $('.player-area iframe').attr('src'),
-        hd,
+        quality: hd ? 'HD' : 'SD',
         title: $('.bannertit h1').text(),
         prev: $('.ep-prev a').attr('href').replace('//www.animerush.tv', ''),
 		all: $('.ep-more a').attr('href').replace('//www.animerush.tv/anime/', '/series/'),
@@ -99,7 +99,7 @@ async function getDetails(url, hd = false) {
 		video: '',
 		title: '',
         prev: '',
-        hd,
+        quality: hd ? 'HD' : 'SD',
 		next: '',
 		all: '',
 		embed: ''
@@ -113,13 +113,12 @@ async function getDetails(url, hd = false) {
 		if(!vidSource) vidSource = $('#dubbed-Animegg iframe').attr('src');
         obj.embed = 'https://www.animegg.org' + vidSource
 
-        try{
-            obj.video = await getVideoUrl(obj['embed'], hd);
-        } catch(err){
-            console.log(err.message)
-            obj.video = await getVideoUrl(obj['embed']);
-            obj.hd = false
+        let videoUrl = await getVideoUrl(obj['embed'], hd);
+        if(!videoUrl){
+            videoUrl = await getVideoUrl(obj['embed']);
+            obj.quality = 'FALLBACK_SD'
         }
+        obj.video = videoUrl
 
 		obj.title = $('.titleep a').text() + ' ' + $('.e4tit').text();
 		if(!obj.title.includes('sode')){

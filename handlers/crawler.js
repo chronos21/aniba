@@ -1,7 +1,7 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
 const db = require('../models');
-const { formatDistanceToNow, sub } = require('date-fns')
+const { sub } = require('date-fns')
 
 async function getSearch(q) {
     let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -31,27 +31,28 @@ async function getSearch(q) {
     return arr;
 }
 
-async function getHome() {
-    axios.get('https://www.animerush.tv')
-        .then(res => {
-            let data = res.data
-            let $ = cheerio.load(data)
-            let arr = []
-            $('#episodes .episode').each(function (index) {
-                let obj = {
-                    href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
-                    title: $(this).find('h3').text(),
-                    time: $(this).find('.episode-meta').text(),
-                    img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
-                }
-                arr.push(obj)
-            })
-            saveNewReleases(arr)
-        })
-
-    let data = await db.Episode.find().sort({releasedAt: -1})
-    
+async function getSavedReleases(){
+    let data = await db.Episode.find().sort({ releasedAt: -1 })
     return data
+}
+
+async function getNewReleases() {
+    let arr = []
+    let { data } = await axios.get('https://www.animerush.tv')
+    let $ = cheerio.load(data)
+    $('#episodes .episode').each(function (index) {
+        let obj = {
+            href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
+            title: $(this).find('h3').text(),
+            time: $(this).find('.episode-meta').text(),
+            img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
+        }
+        arr.push(obj)
+    })
+
+    saveNewReleases(arr)
+
+    return arr
 }
 
 async function getAnimerushVideo(embedUrl, hd = false) {
@@ -210,18 +211,17 @@ async function getSeries(url) {
 async function saveNewReleases(episodes) {
     let count = 0
     let idx = 0
-    
+
     for (let item of episodes) {
         idx += 1
         try {
-            let ep = await db.Episode.findOne({ href: item.href });
+            let ep = await db.Episode.findOne({ title: item.title });
 
-            if(idx === 1 && ep.href === episodes[0].href){
+            if (idx === 1 && ep && ep.title === episodes[0].title) {
                 break
             }
             if (!ep) {
                 item.releasedAt = parseTrueDate(item.time)
-                console.log(item)
                 delete item.time
                 await db.Episode.create(item)
                 count += 1;
@@ -235,7 +235,7 @@ async function saveNewReleases(episodes) {
 
 function parseTrueDate(date = '') {
     let dateArr = date.split(' ')
-    if(Array.isArray(dateArr) && dateArr.length === 3 ){
+    if (Array.isArray(dateArr) && dateArr.length === 3) {
         let type = dateArr[1]
         let now = new Date(Date.now())
         let subVal = {}
@@ -245,10 +245,11 @@ function parseTrueDate(date = '') {
     } else {
         throw new Error('INVALID DATE')
     }
-   
+
 }
 
-exports.getHome = getHome;
+exports.getNewReleases = getNewReleases;
+exports.getSavedReleases = getSavedReleases;
 exports.getDetails = getDetails;
 exports.getAnimerushDetails = getAnimerushDetails;
 exports.getAnimerushVideo = getAnimerushVideo;

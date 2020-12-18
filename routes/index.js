@@ -40,8 +40,16 @@ async function getComments(req, res) {
 
 async function getHome(req, res) {
     try {
-        let data = await crawler.getHome();
-        res.json({ data, tab: 'home', title: 'aniba' });
+        let db = req.query.from === 'db'
+        let data = []
+        let from = 'crawler'
+        if(db){
+            data = await crawler.getSavedReleases()
+            from = 'db'
+        } else {
+            data = await crawler.getNewReleases();
+        } 
+        res.json({ data, from });
     } catch (err) {
         console.log(err.message)
         res.end()
@@ -82,7 +90,7 @@ async function getSearch(req, res) {
     try {
         let { q } = req.query;
         let data = await crawler.getSearch(q);
-        res.json({ data, q, tab: 'home', title: `results for: "${q}"` });
+        res.json({ data });
     } catch (err) {
         console.log(err.message)
         res.end()
@@ -152,7 +160,7 @@ async function getEpisode(req, res) {
         let data = await crawler.getDetails(url, hd);
         if (!data.video || data.video.includes('undefined')) {
             data = await crawler.getAnimerushDetails(url, hd)
-            if(hd && (!data.video || data.video.includes('undefined'))){
+            if (hd && (!data.video || data.video.includes('undefined'))) {
                 data = await crawler.getAnimerushDetails(url)
                 data.quality = 'FALLBACK_SD'
             }
@@ -180,7 +188,7 @@ async function getSeries(req, res) {
             ep.reverse()
             let string = ''
             for (let item of ep) {
-                string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + (hd ? '&hd=true' : '')+ '\r\n')
+                string += ('https://anibaniba.herokuapp.com' + item.href + '?download=true' + (hd ? '&hd=true' : '') + '\r\n')
             }
             let dir = './public/' + id + '.txt'
             fs.writeFileSync(dir, string)

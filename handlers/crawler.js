@@ -32,7 +32,7 @@ async function getSearch(q) {
 }
 
 async function getSavedReleases(){
-    let data = await db.Episode.find().sort({ releasedAt: -1 }).limit(20)
+    let data = await db.Episode.find().sort({ releasedAt: -1 }).limit(30)
     return data
 }
 
@@ -48,7 +48,7 @@ async function getNewReleases() {
             img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
         }
         arr.push(obj)
-        if(index === 19){
+        if(index === 29){
             return false
         }
     })

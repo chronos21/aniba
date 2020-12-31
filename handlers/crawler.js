@@ -1,7 +1,7 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
 const db = require('../models');
-const { sub } = require('date-fns')
+const { sub, formatDistanceToNow } = require('date-fns')
 
 async function getSearch(q) {
     let res = await axios.get('https://www.animegg.org/search/?q=' + q);
@@ -38,22 +38,46 @@ async function getSavedReleases(){
 
 async function getNewReleases() {
     let arr = []
-    let { data } = await axios.get('https://www.animerush.tv')
-    let $ = cheerio.load(data)
-    $('#episodes .episode').each(function (index) {
-        let obj = {
-            href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
-            title: $(this).find('h3').text(),
-            time: $(this).find('.episode-meta').text(),
-            img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
-        }
-        arr.push(obj)
-        if(index === 29){
-            return false
-        }
-    })
+    try{
+        let { data } = await axios.get('https://www.animerush.tv')
+        let $ = cheerio.load(data)
+        $('#episodes .episode').each(function (index) {
+            let obj = {
+                href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
+                title: $(this).find('h3').text(),
+                time: $(this).find('.episode-meta').text(),
+                img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
+            }
+            arr.push(obj)
+            if(index === 29){
+                return false
+            }
+        })
+    } catch(err){
+        console.log(err.message)
+        arr = await getAnimeggNewReleases()
+    }
 
     saveNewReleases(arr)
+
+    return arr
+}
+
+async function getAnimeggNewReleases(){
+    let res = await axios.post('https://www.animegg.org/index/recentReleases');
+    let arr = [];
+    if (res.data.recentReleases.length > 0) {
+        res.data.recentReleases.forEach((item, idx) => {
+            if(idx > 29) return
+            let obj = {
+                href: item.Episode.uri,
+                title: `${item.Show.title} - Episode ${item.Episode.number}`,
+                time: formatDistanceToNow(new Date(item.createdAt), {addSuffix: true}).replace('about ', ''),
+                img: item.Show.thumbnailUrl,
+            }
+            arr.push(obj)
+        });
+    }
 
     return arr
 }

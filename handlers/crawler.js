@@ -123,9 +123,9 @@ async function getAnimerushDetails(url, hd) {
         videoUrl: $('.player-area iframe').attr('src'),
         quality: hd ? 'HD' : 'SD',
         title: $('.bannertit h1').text(),
-        prev: $('.ep-prev a').attr('href').replace('//www.animerush.tv', ''),
-        all: $('.ep-more a').attr('href').replace('//www.animerush.tv/anime/', '/series/'),
-        next: $('.ep-next a').attr('href').replace('//www.animerush.tv', ''),
+        prev: ($('.ep-prev a').attr('href') || '').replace('//www.animerush.tv', ''),
+        all: ($('.ep-more a').attr('href') || '').replace('//www.animerush.tv/anime/', '/series/'),
+        next: ($('.ep-next a').attr('href') || '').replace('//www.animerush.tv', ''),
     }
     obj.video = await getAnimerushVideo(obj.videoUrl, hd)
     return obj

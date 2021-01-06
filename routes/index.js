@@ -157,8 +157,9 @@ async function getEpisode(req, res) {
     try {
         let url = req.params.id;
         let hd = req.query.hd
+        let src = req.query.src;
         let data = await crawler.getDetails(url, hd);
-        if (!data.video || data.video.includes('undefined')) {
+        if (src === 'ar' || !data.video || data.video.includes('undefined')) {
             data = await crawler.getAnimerushDetails(url, hd)
             if (hd && (!data.video || data.video.includes('undefined'))) {
                 data = await crawler.getAnimerushDetails(url)

@@ -127,7 +127,8 @@ async function streamVideo(req, res) {
         let status = 200;
         let head = {
             'Content-Length': fileSize,
-            'Content-Type': 'video/mp4'
+            'Content-Type': 'video/mp4',
+            'Cache-Control': 'public, max-age=604800, immutable'
         };
 
         if (range && headers['content-range']) {
@@ -136,7 +137,8 @@ async function streamVideo(req, res) {
                 'Content-Range': headers['content-range'],
                 'Accept-Ranges': 'bytes',
                 'Content-Length': headers['content-length'],
-                'Content-Type': 'video/mp4'
+                'Content-Type': 'video/mp4',
+                'Cache-Control': 'public, max-age=604800, immutable'
             };
         }
 

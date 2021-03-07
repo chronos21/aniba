@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+
+<main>
+    <h2><%= data.title %></h2>
+    <p><%= data.status %></p>
+
+    <div>
+        <ul>
+            <% (data.episodes || []).forEach(item => { %>
+                <li>
+                    <a href="<%= item.href %>"><%= item.title %></a><br>
+                    <small><%= item.subtitle %> </small>
+            <% }) %>
+        </ul>
+    </div>
+</main>

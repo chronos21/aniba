@@ -1,0 +1,14 @@
+<%- include('partials/header') %>
+
+<main>
+    <ol>
+        <% data.forEach(item => { %>
+            <li>
+                <a href="<%= item.href %>"><%= item.title %></a><br>
+                <small><%= item.time %> </small>
+        <% }) %>
+    </ol>
+</main>
+
+
+<%- include('partials/footer') %>

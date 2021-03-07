@@ -1,16 +1,25 @@
 <%- include('partials/header') %>
 
-<main>
-    <h2><%= data.title %></h2>
-    <p><%= data.status %></p>
+    <main>
+        <h2 class="ani-title">
+            <%= data.title %>
+        </h2>
+        <p class="ani-status">
+            <%= data.status %>
+        </p>
 
-    <div>
-        <ul>
-            <% (data.episodes || []).forEach(item => { %>
-                <li>
-                    <a href="<%= item.href %>"><%= item.title %></a><br>
-                    <small><%= item.subtitle %> </small>
-            <% }) %>
-        </ul>
-    </div>
-</main>
+        <div>
+            <% (data.episodes || []).forEach(item=> { %>
+                <article class="ani-container">
+                    <a class="ani-href" href="<%= item.href %>">
+                        <span class="ani-title">
+                            <%= item.title %>
+                        </span>
+                    </a><br>
+                    <small class="ani-subtitle">
+                        <%= item.subtitle %>
+                    </small>
+                </article>
+                <% }) %>
+        </div>
+    </main>

@@ -1,14 +1,17 @@
 <%- include('partials/header') %>
 
-<main>
-    <ol>
-        <% data.forEach(item => { %>
-            <li>
-                <a href="<%= item.href %>"><%= item.title %></a><br>
-                <small><%= item.time %> </small>
-        <% }) %>
-    </ol>
-</main>
+    <main>
+        <% data.forEach(item=> { %>
+            <article class="ani-container">
+                <img class="ani-img" src="<%= locals.helper.getImageUrl(item.img) %>" alt="<%= item.title %>">
+                <a class="ani-href" href="<%= item.href %>">
+                    <span class="ani-title"><%= item.title %></span>
+                </a><br>
+                <small class="ani-subtitle">
+                    <%= item.time %>
+                </small>
+            </article>
+            <% }) %>
+    </main>
 
-
-<%- include('partials/footer') %>
+    <%- include('partials/footer') %>

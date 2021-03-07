@@ -2,12 +2,7 @@
 
     <main>
         <h2><%= data.title %></h2>
-        <video style="max-width: 100%;" id="my-video" class="video-js" controls preload="auto" width="640" height="auto">
-            <source src="/api/video?url=<%= data.video %>&embed=<%= data.embed %>" type="video/mp4" />
-            <p class="vjs-no-js">
-                <a href="/api/video?url=<%= data.video %>&embed=<%= data.embed %>">Play Video</a>
-            </p>
-        </video>
+        <video class="ani-video" src="/api/video?url=<%= data.video %>&embed=<%= data.embed %>"></video>
 
         <div>
             <a href="<%= data.prev %>">
@@ -22,12 +17,6 @@
                 Next
             </a>
         </div>
-
-        <script src="https://vjs.zencdn.net/7.10.2/video.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/videojs-flash@2/dist/videojs-flash.min.js"></script>
-        <script>
-            var player = videojs('my-video', {techOrder: ['flash']});
-        </script> 
     </main>
 
     <%- include('partials/footer') %>

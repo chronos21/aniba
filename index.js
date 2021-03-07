@@ -13,6 +13,17 @@ app.use(cors())
 app.use(express.static('public'));
 app.use(express.json());
 
+app.locals.helper = {
+    MAIN_URL: 'http://localhost:8080',
+    getImageUrl(url){
+        if(url.includes('//')){
+            return this.MAIN_URL + '/api/images?url=' + url + '&from=vidcache'
+        } else {
+            return this.MAIN_URL + '/api/images?url=' + url.replace('.png', '.jpg')
+        }
+    }
+}
+
 app.use('/api', mainRoutes)
 app.get('/', async (req, res) => {
     let { q } = req.query;
@@ -26,7 +37,7 @@ app.get('/', async (req, res) => {
 })
 
 app.get('/:id', async (req, res) => {
-    let data = await crawler.getDetails(req.params.id);
+    let data = await crawler.getDetails(req.params.id, req.query.hd);
     res.render('episode', {data})
 })
 

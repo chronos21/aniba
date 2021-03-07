@@ -5,8 +5,6 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const crawler = require('./handlers/crawler')
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 app.set('view engine', 'ejs')
 
 app.use(cors())
@@ -26,6 +24,7 @@ app.locals.helper = {
 
 app.use('/api', mainRoutes)
 app.get('/', async (req, res) => {
+    console.log('debug')
     let { q } = req.query;
     let data = []
     if(q){

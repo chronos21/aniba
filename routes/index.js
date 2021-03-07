@@ -59,6 +59,7 @@ async function getHome(req, res) {
 async function streamImage(req, res) {
     try {
         let url = req.query.url
+        console.log(req.query)
         if(req.query['amp;from'] && !req.query.from){
             req.query.from = req.query['amp;from']
         }

@@ -12,7 +12,7 @@ app.use(express.static('public'));
 app.use(express.json());
 
 app.locals.helper = {
-    MAIN_URL: 'http://localhost:8080',
+    MAIN_URL: 'http://anibaniba.herokuapp.com',
     getImageUrl(url){
         if(url.includes('//')){
             return this.MAIN_URL + '/api/images?url=' + url + '&from=vidcache'
@@ -24,7 +24,6 @@ app.locals.helper = {
 
 app.use('/api', mainRoutes)
 app.get('/', async (req, res) => {
-    console.log('debug')
     let { q } = req.query;
     let data = []
     if(q){

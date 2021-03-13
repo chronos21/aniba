@@ -59,6 +59,9 @@ async function getHome(req, res) {
 async function streamImage(req, res) {
     try {
         let url = req.query.url
+        if(req.query['amp;from'] && !req.query.from){
+            req.query.from = req.query['amp;from']
+        }
         if (req.query.from !== 'vidcache') {
             url = 'https://www.animerush.tv/anime-images-big/' + req.query.url
         }

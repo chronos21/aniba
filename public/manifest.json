@@ -1,0 +1,31 @@
+{
+	"short_name": "Aniba",
+	"name": "Anibaniba",
+	"icons": [
+		{
+			"src": "/ic_launcher48.png",
+			"type": "image/png",
+			"sizes": "48x48"
+		},
+		{
+			"src": "/ic_launcher96.png",
+			"type": "image/png",
+			"sizes": "96x96"
+		},
+		{
+			"src": "/ic_launcher144.png",
+			"type": "image/png",
+			"sizes": "144x144"
+		},
+		{
+			"src": "/ic_launcher192.png",
+			"type": "image/png",
+			"sizes": "192x192"
+		}
+	],
+	"start_url": "/",
+	"background_color": "#fff",
+	"display": "standalone",
+	"orientation": "portrait",
+	"theme_color": "#fff"
+}

@@ -16,13 +16,13 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     let data = await crawler.getDetails(req.params.id, req.query.hd);
-    res.render('episode', {data})
+    res.send(JSON.stringify(data))
 })
 
 
 router.get('/series/:id', async (req, res) => {
     let data = await crawler.getSeries(req.params.id);
-    res.render('series', {data})
+    res.send(JSON.stringify(data))
 })
 
 module.exports = router

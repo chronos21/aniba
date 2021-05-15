@@ -4,6 +4,7 @@ const crawler = require('../handlers/crawler');
 const Comment = require('../models/comment');
 const axios = require('axios');
 const fs = require('fs')
+const GogoAnime = require('../handlers/gogoanime')
 
 router.route('/comments/:parentId')
     .post(postComment)
@@ -169,6 +170,13 @@ async function getEpisode(req, res) {
             if (hd && (!data.video || data.video.includes('undefined'))) {
                 data = await crawler.getAnimerushDetails(url)
                 data.quality = 'FALLBACK_SD'
+            }
+        }
+        if(hd && data.quality === 'FALLBACK_SD'){
+            let gogo = await GogoAnime.getEpisode(url);
+            if(gogo.videoUrl || gogo.videoUrlBk){
+                data.video = gogo.videoUrl || gogo.videoUrlBk 
+                data.quality = 'FALLBACK_GOGO'
             }
         }
         let download = req.query.download

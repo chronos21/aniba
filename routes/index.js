@@ -165,20 +165,22 @@ async function getEpisode(req, res) {
         let hd = req.query.hd
         let src = req.query.src;
         let data = await crawler.getDetails(url, hd);
-        if (src === 'ar' || !data.video || data.video.includes('undefined')) {
-            data = await crawler.getAnimerushDetails(url, hd)
-            if (hd && (!data.video || data.video.includes('undefined'))) {
-                data = await crawler.getAnimerushDetails(url)
-                data.quality = 'FALLBACK_SD'
-            }
-        }
-        if(hd && data.quality === 'FALLBACK_SD'){
+        if((!data.video || data.video.includes('undefined')) || (hd && data.quality === 'FALLBACK_SD')){
             let gogo = await GogoAnime.getEpisode(url);
             if(gogo.videoUrl || gogo.videoUrlBk){
                 data.video = gogo.videoUrl || gogo.videoUrlBk 
                 data.quality = 'FALLBACK_GOGO'
             }
         }
+
+        if ((src === 'ar' && !data.video) || data.video.includes('undefined')) {
+            data = await crawler.getAnimerushDetails(url, hd)
+            if (hd && (!data.video || data.video.includes('undefined'))) {
+                data = await crawler.getAnimerushDetails(url)
+                data.quality = 'FALLBACK_SD'
+            }
+        }
+        
         let download = req.query.download
         if (download) {
             res.redirect(`/api/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)

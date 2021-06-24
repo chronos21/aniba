@@ -167,14 +167,16 @@ async function getEpisode(req, res) {
         let data = await crawler.getDetails(url, hd);
         if (src === 'ar' || !data.video || data.video.includes('undefined')) {
             data = await crawler.getAnimerushDetails(url, hd)
+            if(hd){
+                let gogo = await GogoAnime.getEpisode(url);
+                if(gogo.videoUrl || gogo.videoUrlBk){
+                    data.video = gogo.videoUrl || gogo.videoUrlBk 
+                    data.quality = 'FALLBACK_GOGO'
+                }
+            }
             if (hd && (!data.video || data.video.includes('undefined'))) {
                 data = await crawler.getAnimerushDetails(url)
                 data.quality = 'FALLBACK_SD'
-            }
-            let gogo = await GogoAnime.getEpisode(url);
-            if(gogo.videoUrl || gogo.videoUrlBk){
-                data.video = gogo.videoUrl || gogo.videoUrlBk 
-                data.quality = 'FALLBACK_GOGO'
             }
         }
 

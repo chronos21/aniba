@@ -171,14 +171,13 @@ async function getEpisode(req, res) {
                 data = await crawler.getAnimerushDetails(url)
                 data.quality = 'FALLBACK_SD'
             }
-        }
-        if(hd && data.quality === 'FALLBACK_SD'){
             let gogo = await GogoAnime.getEpisode(url);
             if(gogo.videoUrl || gogo.videoUrlBk){
                 data.video = gogo.videoUrl || gogo.videoUrlBk 
                 data.quality = 'FALLBACK_GOGO'
             }
         }
+
         let download = req.query.download
         if (download) {
             res.redirect(`/api/video?url=${data.video}&embed=${data.embed}&download=true&title=${data.title}.mp4`)

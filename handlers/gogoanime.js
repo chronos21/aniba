@@ -79,7 +79,7 @@ const GogoAnime = {
 
     
     getEpisode: async function (episodeUrl) {
-        const url = this.MAIN_URL + ('/' + episodeUrl).replace('//', '/')
+        const url = this.MAIN_URL + ('/' + episodeUrl.toLowerCase()).replace('//', '/')
         let obj = {}
         try {
             let res = await axios.get(url)

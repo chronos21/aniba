@@ -68,7 +68,7 @@ async function getAnimeggNewReleases(){
     let arr = [];
     if (res.data.recentReleases.length > 0) {
         res.data.recentReleases.forEach((item, idx) => {
-            if(idx > 29) return
+            if(idx > 24) return
             let obj = {
                 href: item.Episode.uri,
                 title: `${item.Show.title} - Episode ${item.Episode.number}`,

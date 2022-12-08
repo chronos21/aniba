@@ -203,7 +203,7 @@ async function getSeries(req, res) {
             ep.reverse()
             let string = ''
             for (let item of ep) {
-                string += ('https://apiani.herokuapp.com/api/episodes' + item.href + '?download=true' + (hd ? '&hd=true' : '') + '\r\n')
+                string += ('https://api-ani.onrender.com/api/episodes' + item.href + '?download=true' + (hd ? '&hd=true' : '') + '\r\n')
             }
             let dir = './public/' + id + '.txt'
             fs.writeFileSync(dir, string)

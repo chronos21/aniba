@@ -49,6 +49,7 @@ async function getHome(req, res) {
             from = 'db'
         } else {
             data = await crawler.getNewReleases();
+            crawler.saveNewReleases(data)
         } 
         res.json({ data, from });
     } catch (err) {

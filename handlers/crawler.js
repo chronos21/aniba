@@ -37,29 +37,7 @@ async function getSavedReleases(){
 }
 
 async function getNewReleases() {
-    let arr = []
-    try{
-        let { data } = await axios.get('https://www.animerush.tv')
-        let $ = cheerio.load(data)
-        $('#episodes .episode').each(function (index) {
-            let obj = {
-                href: $(this).find('h3 a').attr('href').replace('//www.animerush.tv/', ''),
-                title: $(this).find('h3').text(),
-                time: $(this).find('.episode-meta').text(),
-                img: $(this).find('img').attr('src').replace('//www.animerush.tv/', '').replace('anime-images/', '').replace('anime-images-big', ''),
-            }
-            arr.push(obj)
-            if(index === 29){
-                return false
-            }
-        })
-    } catch(err){
-        console.log(err.message)
-        arr = await getAnimeggNewReleases()
-    }
-
-    saveNewReleases(arr)
-
+    let arr = await getAnimeggNewReleases()
     return arr
 }
 
